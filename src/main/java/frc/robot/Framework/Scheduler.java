@@ -36,7 +36,7 @@ public class Scheduler {
                 try{
                     long startTS = System.nanoTime();
                     task.onLoop(context);
-                    double delta = (System.nanoTime() - startTS) / 1000000;
+                    double delta = (double)(System.nanoTime() - startTS) / 1000000.0;
                     Subsystems.telemetry.pushDouble(task.getClass().getName()+"_delta_T", delta);
                 }
                 catch (Exception e) {
