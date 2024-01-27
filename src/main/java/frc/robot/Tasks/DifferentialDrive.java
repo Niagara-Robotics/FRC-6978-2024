@@ -40,7 +40,7 @@ public class DifferentialDrive implements IPeriodicTask{
 
     
     public DifferentialDrive() {
-        speedLimit = new Parameter<Double>();
+        speedLimit = new Parameter<Double>(3.0);
     }
 
     public void onStart(RunContext context) {
@@ -161,8 +161,8 @@ public class DifferentialDrive implements IPeriodicTask{
 
         DifferentialDriveWheelSpeeds wheelSpeeds = Hardware.kinematics.toWheelSpeeds(speeds);
         
-        leftVelocityRequest.Velocity = wheelSpeeds.leftMetersPerSecond / Constants.Drive.wheelRotorRatio;
-        rightVelocityRequest.Velocity = wheelSpeeds.rightMetersPerSecond / Constants.Drive.wheelRotorRatio;
+        leftVelocityRequest.Velocity = wheelSpeeds.leftMetersPerSecond / Constants.Drive.rotorToMeters;
+        rightVelocityRequest.Velocity = wheelSpeeds.rightMetersPerSecond / Constants.Drive.rotorToMeters;
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
         Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", wheelSpeeds.leftMetersPerSecond);
@@ -188,8 +188,8 @@ public class DifferentialDrive implements IPeriodicTask{
             angular = -Constants.Drive.maxAngularVelocity;
         }
         
-        double leftSpeed = (linear + angular)/Constants.Drive.wheelRotorRatio;
-        double rightSpeed = (linear - angular)/Constants.Drive.wheelRotorRatio;
+        double leftSpeed = (linear + angular)/Constants.Drive.rotorToMeters;
+        double rightSpeed = (linear - angular)/Constants.Drive.rotorToMeters;
 
         if(angular == 0 && linear == 0) {
             Hardware.leftDriveLeader.setControl(new NeutralOut());
