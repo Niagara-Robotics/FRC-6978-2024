@@ -23,6 +23,10 @@ public class Constants {
         public static double maxAngularVelocity = 1;
         public static double deadZone = 0.1;
     }
+    public static class Intake {
+        public static double floorRollerPower = 0.6;
+        public static double indexRollerPower = 0.2;
+    }
 
     public static class DriverControls {
         public static int steeringAxis = 0;
