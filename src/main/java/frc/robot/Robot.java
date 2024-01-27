@@ -5,6 +5,7 @@ import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Hardware;
 import frc.robot.Platform.Schedulers;
+import frc.robot.Platform.Subsystems;
 import frc.robot.Platform.Tasks;
 
 public class Robot extends TimedRobot{
@@ -16,15 +17,24 @@ public class Robot extends TimedRobot{
     @Override
     public void robotInit() {
         Hardware.configureHardware();
-        Tasks.telemetry.openSession();
+        Subsystems.telemetry.openSession("QSN", 1);
         
+        Schedulers.idleScheduler.clear();
+        for(IPeriodicTask task : Tasks.idleTasks) {
+            Schedulers.idleScheduler.add(RunContext.disabled, task);
+        }
     }
 
     @Override
     protected void loopFunc() {
-        Tasks.telemetry.openFrame();
+        Subsystems.telemetry.openFrame();
         super.loopFunc();
-        //Tasks.telemetry.closeFrame();
+        //Subsystems.telemetry.closeFrame();
+    }
+
+    @Override
+    public void robotPeriodic() {
+        Schedulers.idleScheduler.process(RunContext.disabled);
     }
 
     @Override
@@ -48,7 +58,7 @@ public class Robot extends TimedRobot{
 
     @Override
     public void endCompetition() {
-        Tasks.telemetry.closeSession();
+        Subsystems.telemetry.closeSession();
         super.endCompetition();
     }
 }

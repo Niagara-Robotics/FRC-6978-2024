@@ -7,6 +7,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -16,12 +17,10 @@ public class Hardware {
     //Gyro
     public static AHRS navX = new AHRS();
 
-
-
     //Drive Motors
-    public static TalonFX leftDrive1 = new TalonFX(1, "rio");
+    public static TalonFX leftDriveLeader = new TalonFX(1, "rio");
     public static TalonFX leftDrive2 = new TalonFX(2, "rio");
-    public static TalonFX rightDrive1 = new TalonFX(3, "rio");
+    public static TalonFX rightDriveLeader = new TalonFX(3, "rio");
     public static TalonFX rightDrive2 = new TalonFX(4, "rio");
 
     //Aft lift mechanism
@@ -39,12 +38,13 @@ public class Hardware {
     public static Joystick driverStick = new Joystick(0);
     public static Joystick operatorStick = new Joystick(1);
 
+    public static DifferentialDriveKinematics kinematics;
 
     public static void configureHardware() {
         //Drive motors
-        leftDrive1.setInverted(false);
+        leftDriveLeader.setInverted(false);
         //leftDrive2.setInverted(false);
-        rightDrive1.setInverted(true);
+        rightDriveLeader.setInverted(true);
         //rightDrive2.setInverted(false);
 
         leftDrive2.setControl(new Follower(1, false));
@@ -68,10 +68,12 @@ public class Hardware {
         rightDriveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         rightDriveConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        leftDrive1.getConfigurator().apply(leftDriveConfiguration);
-        rightDrive1.getConfigurator().apply(rightDriveConfiguration);
+        leftDriveLeader.getConfigurator().apply(leftDriveConfiguration);
+        rightDriveLeader.getConfigurator().apply(rightDriveConfiguration);
 
         //other
         navX.reset();
+
+        kinematics = new DifferentialDriveKinematics(Constants.Drive.trackWidth);
     }
 }

@@ -1,6 +1,7 @@
 package frc.robot.Framework;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class RamseteController {
     Vector2D currentPose;
@@ -15,7 +16,7 @@ public class RamseteController {
         currentPose.theta = pose.getRotation().getRadians();
     }
 
-    void evaluate() {
+    ChassisSpeeds evaluate() {
         double dx = target.x - currentPose.x;
         double dy = target.y - currentPose.y;
 
@@ -28,5 +29,7 @@ public class RamseteController {
 
         double v = target.v * Math.cos(etheta) + k * ex;
         double omega = target.omega + k * etheta + ((beta*target.v*Math.sin(etheta)*ey)/etheta);
+
+        return new ChassisSpeeds(v, 0, omega);
     }
 }

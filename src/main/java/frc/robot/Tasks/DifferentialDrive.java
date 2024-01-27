@@ -3,132 +3,65 @@ package frc.robot.Tasks;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Framework.IPeriodicTask;
-import frc.robot.Framework.PIDController;
+
+import frc.robot.Framework.Parameter;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Constants;
 import frc.robot.Platform.Hardware;
-import frc.robot.Platform.Tasks;
+import frc.robot.Platform.Subsystems;
+
 
 public class DifferentialDrive implements IPeriodicTask{
     enum DriveMode {
-        stick,
-        balance,
-        heading,
-        distance,
+        legacy_stick, //TODO: Remove legacy stick mode
+        modern_velocity,
         calibrate,
+        none,
     };
     DriveMode mode;
 
     VoltageOut calibrationOut;
+    Timer calibrationTimer;
 
     VelocityVoltage leftVelocityRequest;
     VelocityVoltage rightVelocityRequest;
 
-    StatusSignal<Double> leftPosition;
-    StatusSignal<Double> rightPosition;
+    Parameter<Double> speedLimit;
 
-    DifferentialDriveOdometry odometry;
 
-    PIDController balancingYawController = new PIDController(
-        Constants.Drive.balancer_yaw_kP,
-        Constants.Drive.balancer_yaw_kI,
-        Constants.Drive.balancer_yaw_kD
-    );
-    PIDController balancingPitchController = new PIDController(
-        Constants.Drive.balancer_pitch_kP,
-        Constants.Drive.balancer_pitch_kI,
-        Constants.Drive.balancer_pitch_kD
-    );
-
-    boolean gearShiftState;
-    Timer calibrationTimer;
     
     public DifferentialDrive() {
-        
-    }
-
-    void initOdometry() {
-        odometry = new DifferentialDriveOdometry(
-            Hardware.navX.getRotation2d(),
-            leftPosition.getValue() * Constants.Drive.wheelRotorRatio, 
-            rightPosition.getValue() * Constants.Drive.wheelRotorRatio,
-            new Pose2d(0, 0, new Rotation2d())
-        );
-    }
-
-    void updateOdometry() {
-        Pose2d pose = odometry.update(
-            Hardware.navX.getRotation2d(),
-            leftPosition.getValue() * Constants.Drive.wheelRotorRatio, 
-            rightPosition.getValue() * Constants.Drive.wheelRotorRatio
-        );
-
-        Tasks.telemetry.pushDouble("odometryX", pose.getX());
-        Tasks.telemetry.pushDouble("odometryY", pose.getY());
-        Tasks.telemetry.pushDouble("leftPosition", leftPosition.getValue());
-        Tasks.telemetry.pushDouble("rightPosition", rightPosition.getValue());
+        speedLimit = new Parameter<Double>();
     }
 
     public void onStart(RunContext context) {
-        gearShiftState = Constants.Drive.gearShiftDefaultState;
-   
-        //Hardware.driveGearShiftSolenoid.set(gearShiftState);
-        setBrake(false);
         if(context == RunContext.teleoperated) {
             useStick();
         }
-        leftPosition = Hardware.leftDrive1.getPosition();
-        rightPosition = Hardware.rightDrive1.getPosition();
-
-        leftPosition.setUpdateFrequency(63);
-        rightPosition.setUpdateFrequency(63);
-
-        initOdometry();
     }
 
-    public void onStop() {}
+    public void onStop() {
+        coast();
+    }
 
     public void onLoop(RunContext context) {
-        BaseStatusSignal.refreshAll(leftPosition, rightPosition);
-
-        updateOdometry();
-
-        if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.balance) || 
-            Hardware.driverStick.getRawButtonReleased(1)) {
-            useStick();
-        }
-
         if(Hardware.driverStick.getRawButtonPressed(1)) {
-            calibrationOut = new VoltageOut(0);
-            calibrationOut.UpdateFreqHz = 50;
-            Hardware.leftDrive1.setControl(calibrationOut);
-            Hardware.rightDrive1.setControl(calibrationOut);
-            calibrationTimer = new Timer();
-            calibrationTimer.start();
-            mode = DriveMode.calibrate;
+            calibrateFeedforward();
         }
 
-        Tasks.telemetry.pushDouble("theta", Hardware.navX.getYaw());
-
-        Tasks.telemetry.pushString("DifferentialDriveMode", mode.toString());
+        Subsystems.telemetry.pushString("DifferentialDriveMode", mode.toString());
         switch (mode) {
-            case stick:
-                onStickDrive();
-                break;
-            case balance:
-                onBalance();
+            case legacy_stick:
+                driveStickVelocity();
                 break;
             case calibrate:
                 onCalibrateFeedforward();
@@ -138,20 +71,33 @@ public class DifferentialDrive implements IPeriodicTask{
         }
     }
 
+    public DriveMode getMode() {
+        return mode;
+    }
+
     public void useStick() {
-        Tasks.telemetry.pushEvent("DifferentialDrive.EnterStick");
+        Subsystems.telemetry.pushEvent("DifferentialDrive.EnterStick");
         //setBrake(false);
         leftVelocityRequest = new VelocityVoltage(0);
         rightVelocityRequest = new VelocityVoltage(0);
         leftVelocityRequest.UpdateFreqHz = 60;
         rightVelocityRequest.UpdateFreqHz = 60;
 
-        Hardware.leftDrive1.setControl(leftVelocityRequest);
-        Hardware.rightDrive1.setControl(rightVelocityRequest);
-        mode = DriveMode.stick;
+        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
+        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+        mode = DriveMode.legacy_stick;
     }
 
-    void onStickDrive() {
+    void initVelocityDrive() {
+        leftVelocityRequest = new VelocityVoltage(0);
+        rightVelocityRequest = new VelocityVoltage(0);
+        leftVelocityRequest.UpdateFreqHz = 63;
+        rightVelocityRequest.UpdateFreqHz = 63;
+        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
+        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+    }
+
+    void driveStickVelocity() {
         double x;
         double y;
 
@@ -176,74 +122,86 @@ public class DifferentialDrive implements IPeriodicTask{
         x *= Constants.Drive.xMultiplier;
         y *= Constants.Drive.yMultiplier;
 
-        Tasks.telemetry.pushDouble("DriveX", x);
-        Tasks.telemetry.pushDouble("DriveY", y);
+        Subsystems.telemetry.pushDouble("DriveX", x);
+        Subsystems.telemetry.pushDouble("DriveY", y);
 
-        setDrives(x, y);        
+        driveVelocity(x, y);
     }
 
-    void onBalance() {
-        setDrives(
-            balancingYawController.process(Hardware.navX.getAngle()), 
-            balancingPitchController.process(Hardware.navX.getPitch())
-            );
+    void calibrateFeedforward() {
+        calibrationOut = new VoltageOut(0);
+        calibrationOut.UpdateFreqHz = 50;
+        Hardware.leftDriveLeader.setControl(calibrationOut);
+        Hardware.rightDriveLeader.setControl(calibrationOut);
+        calibrationTimer = new Timer();
+        calibrationTimer.start();
+        mode = DriveMode.calibrate;
     }
 
     void onCalibrateFeedforward() {
         if(calibrationTimer.get() > 10) {
-            mode = DriveMode.stick;
+            mode = DriveMode.legacy_stick;
         }
-        Tasks.telemetry.pushDouble("calibrationTime", calibrationTimer.get());
+        Subsystems.telemetry.pushDouble("calibrationTime", calibrationTimer.get());
         double input = ((int)((calibrationTimer.get() / 10.0) * 10));
 
-        Tasks.telemetry.pushDouble("leftFeedForwardRatio", input / Hardware.leftDrive1.getVelocity().getValue());
-        Tasks.telemetry.pushDouble("rightFeedForwardRatio", input / Hardware.rightDrive1.getVelocity().getValue());
+        Subsystems.telemetry.pushDouble("leftFeedForwardRatio", input / Hardware.leftDriveLeader.getVelocity().getValue());
+        Subsystems.telemetry.pushDouble("rightFeedForwardRatio", input / Hardware.rightDriveLeader.getVelocity().getValue());
 
-        Tasks.telemetry.pushDouble("calibrationRequestedVoltage", input);
+        Subsystems.telemetry.pushDouble("calibrationRequestedVoltage", input);
         calibrationOut.Output = input;
-        Hardware.leftDrive1.setControl(calibrationOut);
-        Hardware.rightDrive1.setControl(calibrationOut);
+        Hardware.leftDriveLeader.setControl(calibrationOut);
+        Hardware.rightDriveLeader.setControl(calibrationOut);
     }
 
-    void setDrives(double x, double y) {
-        if(y > Constants.Drive.maxY){
-            y = Constants.Drive.maxY;
-        }else if(y < -Constants.Drive.maxY){
-            y = -Constants.Drive.maxY;
+    public void driveChassisSpeeds(ChassisSpeeds speeds) {
+        if(mode != DriveMode.modern_velocity) {
+            initVelocityDrive();
         }
 
-        if(x > Constants.Drive.maxY){
-            x = Constants.Drive.maxY;
-        }else if(x < -Constants.Drive.maxY){
-            x = -Constants.Drive.maxY;
+        DifferentialDriveWheelSpeeds wheelSpeeds = Hardware.kinematics.toWheelSpeeds(speeds);
+        
+        leftVelocityRequest.Velocity = wheelSpeeds.leftMetersPerSecond / Constants.Drive.wheelRotorRatio;
+        rightVelocityRequest.Velocity = wheelSpeeds.rightMetersPerSecond / Constants.Drive.wheelRotorRatio;
+        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
+        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", wheelSpeeds.leftMetersPerSecond);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", wheelSpeeds.leftMetersPerSecond);
+    }
+
+    public void coast() {
+        Hardware.leftDriveLeader.setControl(new CoastOut());
+        Hardware.rightDriveLeader.setControl(new CoastOut());
+        mode = DriveMode.none;
+    }
+
+    void driveVelocity(double angular, double linear) {
+        if(linear > Constants.Drive.maxLinearVelocity){
+            linear = Constants.Drive.maxLinearVelocity;
+        }else if(linear < -Constants.Drive.maxLinearVelocity){
+            linear = -Constants.Drive.maxLinearVelocity;
+        }
+
+        if(angular > Constants.Drive.maxAngularVelocity){
+            angular = Constants.Drive.maxAngularVelocity;
+        }else if(angular < -Constants.Drive.maxAngularVelocity){
+            angular = -Constants.Drive.maxAngularVelocity;
         }
         
-        double leftSpeed = (y + x)*8/*Constants.Drive.maxVelocity*/;
-        double rightSpeed = (y - x)*8/*Constants.Drive.maxVelocity*/;
+        double leftSpeed = (linear + angular)/Constants.Drive.wheelRotorRatio;
+        double rightSpeed = (linear - angular)/Constants.Drive.wheelRotorRatio;
 
-        if(x == 0 && y == 0) {
-            Hardware.leftDrive1.setControl(new NeutralOut());
-            Hardware.rightDrive1.setControl(new NeutralOut());
+        if(angular == 0 && linear == 0) {
+            Hardware.leftDriveLeader.setControl(new NeutralOut());
+            Hardware.rightDriveLeader.setControl(new NeutralOut());
         } else {
             leftVelocityRequest.Velocity = leftSpeed;
             rightVelocityRequest.Velocity = rightSpeed;
-            Hardware.leftDrive1.setControl(leftVelocityRequest);
-            Hardware.rightDrive1.setControl(rightVelocityRequest);
-            Tasks.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", leftSpeed);
-            Tasks.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", rightSpeed);
+            Hardware.leftDriveLeader.setControl(leftVelocityRequest);
+            Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+            Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", leftSpeed);
+            Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", rightSpeed);
         }
-    }
-
-    //TODO: replace this with control modes, blocking config request takes over 250ms
-    void setBrake(boolean brake) {
-        Tasks.telemetry.pushEvent("DifferentialDrive.SetBrakeMode");
-        Tasks.telemetry.pushBoolean("DifferentialDrive.BrakeMode", brake);
-        NeutralModeValue neutralMode = brake? NeutralModeValue.Brake : NeutralModeValue.Coast; 
-        //config requests in question
-        Hardware.leftDrive1.setNeutralMode(neutralMode);
-        Hardware.leftDrive2.setNeutralMode(neutralMode);
-        Hardware.rightDrive1.setNeutralMode(neutralMode);
-        Hardware.rightDrive2.setNeutralMode(neutralMode);
     }
 
     public List<RunContext> getAllowedRunContexts() { 
