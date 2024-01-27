@@ -14,6 +14,10 @@ public class Parameter<T> {
 
     public Consumer<T> onValueUpdated;
 
+    public Parameter(T defaultValue) {
+        value = defaultValue;
+    }
+
     public ParameterHandle<T> getHandle(String name) {
         ParameterHandle<T> handle = new ParameterHandle<T>(this, name);
         handles.add(handle);
