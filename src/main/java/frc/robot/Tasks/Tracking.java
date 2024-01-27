@@ -45,8 +45,8 @@ public class Tracking implements IPeriodicTask {
 
         odometry = new DifferentialDriveOdometry(
             Hardware.navX.getRotation2d(),
-            leftPosition.getValue() * Constants.Drive.wheelRotorRatio, 
-            rightPosition.getValue() * Constants.Drive.wheelRotorRatio,
+            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
+            rightPosition.getValue() * Constants.Drive.rotorToMeters,
             new Pose2d(0, 0, new Rotation2d())
         );
     }
@@ -54,8 +54,8 @@ public class Tracking implements IPeriodicTask {
     void updateOdometry() {
         Pose2d pose = odometry.update(
             getFieldRelativeRotation(),
-            leftPosition.getValue() * Constants.Drive.wheelRotorRatio, 
-            rightPosition.getValue() * Constants.Drive.wheelRotorRatio
+            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
+            rightPosition.getValue() * Constants.Drive.rotorToMeters
         );
 
         Subsystems.telemetry.pushDouble("odometryX", pose.getX());
@@ -66,8 +66,8 @@ public class Tracking implements IPeriodicTask {
 
     public void setOdometryPose(Pose2d pose) {
         odometry.resetPosition(getFieldRelativeRotation(), 
-            leftPosition.getValue() * Constants.Drive.wheelRotorRatio, 
-            rightPosition.getValue() * Constants.Drive.wheelRotorRatio,
+            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
+            rightPosition.getValue() * Constants.Drive.rotorToMeters,
             pose
         );
     }
