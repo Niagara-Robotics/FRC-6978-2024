@@ -8,6 +8,11 @@ public class Tasks {
         (IPeriodicTask)Subsystems.intake,
     };
 
+    public static IPeriodicTask[] autonomousTasks = {
+        (IPeriodicTask)Subsystems.differentialDrive,
+
+    };
+
     public static IPeriodicTask[] idleTasks = {
         (IPeriodicTask)Subsystems.tracking,
     };

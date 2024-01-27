@@ -1,5 +1,6 @@
 package frc.robot.Platform;
 
+import frc.robot.Tasks.Auto;
 import frc.robot.Tasks.DifferentialDrive;
 import frc.robot.Tasks.Intake;
 import frc.robot.Tasks.Telemetry;
@@ -14,4 +15,6 @@ public class Subsystems {
     public static DifferentialDrive differentialDrive = new DifferentialDrive();
     public static Tracking tracking = new Tracking();
     
+    public static Auto auto = new Auto();
+
 }
