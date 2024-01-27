@@ -45,7 +45,7 @@ public class Auto implements IPeriodicTask {
                 dummySubsytem // Reference to this subsystem to set requirements
         );
 
-        testAuto = AutoBuilder.buildAuto("test1");
+        testAuto = AutoBuilder.buildAuto("New Auto");
         NamedCommands.registerCommand(null, testAuto);
     }
     
