@@ -1,5 +1,6 @@
 package frc.robot.Platform;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -9,6 +10,8 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.Counter;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -23,16 +26,24 @@ public class Hardware {
     public static TalonFX rightDriveLeader = new TalonFX(3, "rio");
     public static TalonFX rightDrive2 = new TalonFX(4, "rio");
 
-    //Aft lift mechanism
-    public static TalonFX armLiftMotor = new TalonFX(5);
-    //Fwd cable lift
-    public static TalonFX armCableMotor = new TalonFX(50);
+    public static TalonFX leftLauncherStage1 = new TalonFX(21);
+    public static TalonFX leftLauncherStage2 = new TalonFX(20);
 
+    public static TalonFX rightLauncherStage1 = new TalonFX(22);
+    public static TalonFX rightLauncherStage2 = new TalonFX(23);
+
+    public static TalonSRX intakeFloorRoller = new TalonSRX(10);
+    public static TalonSRX intakeIndexerRoller = new TalonSRX(11);
 
     //Pneumatics
     public static Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
     public static Solenoid driveGearShiftSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 0);
     public static Solenoid gripperSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 1);
+
+    public static DigitalInput floorSensor = new DigitalInput(0);
+    public static DigitalInput indexSensor = new DigitalInput(1);
+
+    public static Counter noteExitCounter = new Counter(Counter.Mode.kTwoPulse);
 
     //Human input devices
     public static Joystick driverStick = new Joystick(0);
@@ -75,5 +86,10 @@ public class Hardware {
         navX.reset();
 
         kinematics = new DifferentialDriveKinematics(Constants.Drive.trackWidth);
+
+        intakeFloorRoller.setInverted(true);
+
+        //noteExitCounter.setUpSource(0);
+        //noteExitCounter.setUpSourceEdge(false, true);
     }
 }
