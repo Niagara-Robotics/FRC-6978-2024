@@ -29,8 +29,8 @@ public class Hardware {
     public static TalonFX leftLauncherStage1 = new TalonFX(21);
     public static TalonFX leftLauncherStage2 = new TalonFX(20);
 
-    public static TalonFX rightLauncherStage1 = new TalonFX(22);
-    public static TalonFX rightLauncherStage2 = new TalonFX(23);
+    public static TalonFX rightLauncherStage1 = new TalonFX(23);
+    public static TalonFX rightLauncherStage2 = new TalonFX(22);
 
     public static TalonSRX intakeFloorRoller = new TalonSRX(10);
     public static TalonSRX intakeIndexerRoller = new TalonSRX(11);
@@ -82,6 +82,18 @@ public class Hardware {
         leftDriveLeader.getConfigurator().apply(leftDriveConfiguration);
         rightDriveLeader.getConfigurator().apply(rightDriveConfiguration);
 
+        TalonFXConfiguration launcherConfiguration = new TalonFXConfiguration();
+        launcherConfiguration.Slot0.kP = Constants.Launcher.kP;
+        launcherConfiguration.Slot0.kV = Constants.Launcher.left_kV;
+        launcherConfiguration.Slot0.kS = Constants.Launcher.kS;
+
+        leftLauncherStage2.getConfigurator().apply(launcherConfiguration);
+
+        launcherConfiguration.Slot0.kV = Constants.Launcher.right_kV;
+        rightLauncherStage2.getConfigurator().apply(launcherConfiguration);
+
+        rightLauncherStage2.setInverted(true);
+
         //other
         navX.reset();
 
@@ -89,7 +101,7 @@ public class Hardware {
 
         intakeFloorRoller.setInverted(true);
 
-        //noteExitCounter.setUpSource(0);
-        //noteExitCounter.setUpSourceEdge(false, true);
+        noteExitCounter.setUpSource(2);
+        noteExitCounter.setUpSourceEdge(false, true);
     }
 }
