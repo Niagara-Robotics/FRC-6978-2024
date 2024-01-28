@@ -45,15 +45,28 @@ public class Robot extends TimedRobot{
         }
     }
 
-
     @Override
     public void teleopPeriodic() {
         Schedulers.teleopScheduler.process(RunContext.teleoperated);
+    }
+
+    @Override
+    public void autonomousInit() {
+        Schedulers.autoScheduler.clear();
+        for (IPeriodicTask task : Tasks.autonomousTasks) {
+            Schedulers.autoScheduler.add(RunContext.autonomous, task);
+        }
+    }
+
+    @Override
+    public void autonomousPeriodic() {
+        Schedulers.autoScheduler.process(RunContext.autonomous);
     }
     
     @Override
     public void disabledInit() {
         Schedulers.teleopScheduler.clear();
+        Schedulers.autoScheduler.clear();
     }
 
     @Override
