@@ -4,13 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.math.trajectory.ExponentialProfile.Constraints;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Framework.IPeriodicTask;
 
