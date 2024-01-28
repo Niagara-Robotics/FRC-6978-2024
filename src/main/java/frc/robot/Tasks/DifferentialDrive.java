@@ -10,6 +10,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.trajectory.ExponentialProfile.Constraints;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Framework.IPeriodicTask;
 
@@ -54,9 +55,9 @@ public class DifferentialDrive implements IPeriodicTask{
     }
 
     public void onLoop(RunContext context) {
-        if(Hardware.driverStick.getRawButtonPressed(1)) {
+        /*if(Hardware.driverStick.getRawButtonPressed(1)) {
             calibrateFeedforward();
-        }
+        }*/
 
         Subsystems.telemetry.pushString("DifferentialDriveMode", mode.toString());
         switch (mode) {
@@ -95,6 +96,7 @@ public class DifferentialDrive implements IPeriodicTask{
         rightVelocityRequest.UpdateFreqHz = 63;
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+        mode = DriveMode.modern_velocity;
     }
 
     void driveStickVelocity() {
@@ -159,14 +161,34 @@ public class DifferentialDrive implements IPeriodicTask{
             initVelocityDrive();
         }
 
+        Subsystems.telemetry.pushDouble("drive.requestedOmega", speeds.omegaRadiansPerSecond);
+        Subsystems.telemetry.pushDouble("drive.requestedVX", speeds.vxMetersPerSecond);
+
+
         DifferentialDriveWheelSpeeds wheelSpeeds = Hardware.kinematics.toWheelSpeeds(speeds);
         
-        leftVelocityRequest.Velocity = wheelSpeeds.leftMetersPerSecond / Constants.Drive.rotorToMeters;
-        rightVelocityRequest.Velocity = wheelSpeeds.rightMetersPerSecond / Constants.Drive.rotorToMeters;
+        double left = wheelSpeeds.leftMetersPerSecond;
+        double right = wheelSpeeds.rightMetersPerSecond;
+
+        if(left > Constants.Drive.maxLinearVelocity) {
+            left = Constants.Drive.maxLinearVelocity;
+        } else if (left < -Constants.Drive.maxLinearVelocity) {
+            left = -Constants.Drive.maxLinearVelocity;
+        }
+
+        if(right > Constants.Drive.maxLinearVelocity) {
+            right = Constants.Drive.maxLinearVelocity;
+        } else if (right < -Constants.Drive.maxLinearVelocity) {
+            right = -Constants.Drive.maxLinearVelocity;
+        }
+
+        leftVelocityRequest.Velocity = left / Constants.Drive.rotorToMeters;
+        rightVelocityRequest.Velocity = right / Constants.Drive.rotorToMeters;
+
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-        Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", wheelSpeeds.leftMetersPerSecond);
-        Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", wheelSpeeds.leftMetersPerSecond);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", left);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", right);
     }
 
     public void coast() {
@@ -191,17 +213,13 @@ public class DifferentialDrive implements IPeriodicTask{
         double leftSpeed = (linear + angular)/Constants.Drive.rotorToMeters;
         double rightSpeed = (linear - angular)/Constants.Drive.rotorToMeters;
 
-        if(angular == 0 && linear == 0) {
-            Hardware.leftDriveLeader.setControl(new NeutralOut());
-            Hardware.rightDriveLeader.setControl(new NeutralOut());
-        } else {
-            leftVelocityRequest.Velocity = leftSpeed;
-            rightVelocityRequest.Velocity = rightSpeed;
-            Hardware.leftDriveLeader.setControl(leftVelocityRequest);
-            Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-            Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", leftSpeed);
-            Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", rightSpeed);
-        }
+        leftVelocityRequest.Velocity = leftSpeed;
+        rightVelocityRequest.Velocity = rightSpeed;
+        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
+        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", leftSpeed);
+        Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", rightSpeed);
+        
     }
 
     public List<RunContext> getAllowedRunContexts() { 
