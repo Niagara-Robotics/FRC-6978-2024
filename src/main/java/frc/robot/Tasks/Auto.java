@@ -10,6 +10,7 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.AutoCommands.IntakeCommand;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Subsystems;
@@ -36,6 +37,8 @@ public class Auto implements IPeriodicTask {
                     // This will flip the path being followed to the red side of the field.
                     // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
 
+
+
                     var alliance = DriverStation.getAlliance();
                     if (alliance.isPresent()) {
                         return alliance.get() == DriverStation.Alliance.Red;
@@ -46,7 +49,9 @@ public class Auto implements IPeriodicTask {
         );
 
         testAuto = AutoBuilder.buildAuto("New Auto");
-        NamedCommands.registerCommand(null, testAuto);
+
+        IntakeCommand intakeCommand = new IntakeCommand();
+        NamedCommands.registerCommand("Intake", intakeCommand);
     }
     
     public List<RunContext> getAllowedRunContexts() { 
