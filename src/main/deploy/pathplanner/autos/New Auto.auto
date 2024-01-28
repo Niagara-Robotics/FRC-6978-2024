@@ -2,25 +2,19 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 2.0,
-      "y": 4.834304062126643
+      "x": 1.6644008765598717,
+      "y": 4.622995533993029
     },
-    "rotation": -39.39901202765622
+    "rotation": 0
   },
   "command": {
     "type": "sequential",
     "data": {
       "commands": [
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
           "type": "path",
           "data": {
-            "pathName": null
+            "pathName": "Test 1"
           }
         }
       ]
