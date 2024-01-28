@@ -9,7 +9,6 @@ import com.ctre.phoenix6.StatusSignal;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import frc.robot.Framework.IPeriodicTask;
@@ -27,7 +26,6 @@ public class Tracking implements IPeriodicTask {
 
     // --Odometry system(wheel encoder and gyroscope tracking)--
     DifferentialDriveOdometry odometry;
-    DifferentialDriveKinematics kinematics;
 
     StatusSignal<Double> leftPosition;
     StatusSignal<Double> rightPosition;
@@ -43,9 +41,15 @@ public class Tracking implements IPeriodicTask {
         leftPosition.setUpdateFrequency(63);
         rightPosition.setUpdateFrequency(63);
 
+        leftVelocity = Hardware.leftDriveLeader.getVelocity();
+        rightVelocity = Hardware.rightDriveLeader.getVelocity();
+
+        leftVelocity.setUpdateFrequency(63);
+        rightVelocity.setUpdateFrequency(63);
+
         odometry = new DifferentialDriveOdometry(
             Hardware.navX.getRotation2d(),
-            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
+            leftPosition.getValue() * Constants.Drive.rotorToMeters,
             rightPosition.getValue() * Constants.Drive.rotorToMeters,
             new Pose2d(0, 0, new Rotation2d())
         );
@@ -78,7 +82,7 @@ public class Tracking implements IPeriodicTask {
             rightVelocity.getValue()
         );
 
-        return kinematics.toChassisSpeeds(wheelSpeeds);
+        return Hardware.kinematics.toChassisSpeeds(wheelSpeeds);
     }
 
     //general getters
@@ -103,7 +107,7 @@ public class Tracking implements IPeriodicTask {
         BaseStatusSignal.refreshAll(leftPosition, rightPosition);
 
         updateOdometry();
-        Subsystems.telemetry.pushDouble("theta", Hardware.navX.getYaw());
+        Subsystems.telemetry.pushDouble("theta", getFieldRelativeRotation().getDegrees());
     }
 
     public void onStop() {}
