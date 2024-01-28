@@ -55,13 +55,13 @@ public class TwoSidedLauncher implements IPeriodicTask {
     //returns whether the stage 2 rollers are within tolerances and ready to launch a note
     boolean stage2Ready() {
         return
-            (leftStage2VelocitySignal.getValue() - linearVelocity.getValue()) < Constants.Launcher.stage2Tolerance &&
-            (rightStage2VelocitySignal.getValue() - linearVelocity.getValue()) < Constants.Launcher.stage2Tolerance;
+            (Math.abs(linearVelocity.getValue() - leftStage2VelocitySignal.getValue()) < Constants.Launcher.stage2Tolerance) &&
+            (Math.abs(linearVelocity.getValue() - rightStage2VelocitySignal.getValue()) < Constants.Launcher.stage2Tolerance);
     }
 
     void velocityParametersUpdated() {
-        leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue()) * Constants.Launcher.rotorToMeters;
-        rightStage2Control.Velocity = (linearVelocity.getValue() - spinVelocity.getValue()) * Constants.Launcher.rotorToMeters;
+        leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue()); //TODO: roto to meters
+        rightStage2Control.Velocity = (linearVelocity.getValue() - spinVelocity.getValue());
         Subsystems.telemetry.pushDouble("launcher.linearVelocity", linearVelocity.getValue());
         Subsystems.telemetry.pushDouble("launcher.spinVelocity", spinVelocity.getValue());
     }
@@ -88,12 +88,15 @@ public class TwoSidedLauncher implements IPeriodicTask {
         leftStage2Control.UpdateFreqHz = 63;
         rightStage2Control.UpdateFreqHz = 63;
 
-        linearVelocity = new Parameter<Double>(1.2);
+        linearVelocity = new Parameter<Double>(Constants.Launcher.defaultVelocity);
+        spinVelocity = new Parameter<Double>(0.0);
 
         velocityParametersUpdated();
 
         linearVelocity.onValueUpdated = value -> velocityParametersUpdated();
         spinVelocity.onValueUpdated = value -> velocityParametersUpdated();
+
+        stopLauncher();
     }
 
     public void onLoop(RunContext ctx) {
@@ -103,16 +106,23 @@ public class TwoSidedLauncher implements IPeriodicTask {
             launchNote();
         } else if (Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.launcherButton)) {
             stopLauncher();
+            Subsystems.intake.cancelFeed();
         }
 
-        if(stage2Ready()&& !stage1Active) {
+        Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
+
+        if(stage2Ready() && !stage1Active && stage2Active) {
             stage1Active = true;
+            Subsystems.intake.feedLauncher();
             Hardware.leftLauncherStage1.setControl(stage1Control);
             Hardware.rightLauncherStage1.setControl(stage1Control);
         }
         //note exit counter is connected to a prox sensor at the end of the shooter
         //exit counter will reach 2 once a note has fully cleared the sensor(2 rising edges on the signal)
-        Subsystems.telemetry.pushDouble("launcher.noteExitCounter", 0);
+        Subsystems.telemetry.pushDouble("launcher.noteExitCounter", Hardware.noteExitCounter.get());
+    
+        Subsystems.telemetry.pushDouble("launcher.leftStage2Velocity", leftStage2VelocitySignal.getValue());
+        Subsystems.telemetry.pushDouble("launcher.rightStage2Velocity", rightStage2VelocitySignal.getValue());
     }
 
     public void onStop() {}

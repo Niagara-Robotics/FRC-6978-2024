@@ -43,9 +43,9 @@ public class Intake implements IPeriodicTask{
     }
 
     //Intake stops itself once a note is detected inside
-    public void intakeNote() {
+    public boolean intakeNote() {
         //dont start the intake if the 
-        if(currentState.indexSensor || hasNote()) return;
+        if(currentState.indexSensor || hasNote()) return false;
 
         Hardware.intakeFloorRoller.set(ControlMode.PercentOutput, Constants.Intake.floorRollerPower);
         Hardware.intakeIndexerRoller.set(ControlMode.PercentOutput, Constants.Intake.indexRollerPower);
@@ -53,21 +53,38 @@ public class Intake implements IPeriodicTask{
         currentState.floorRoller = true;
         currentState.indexRoller = true;
         Subsystems.telemetry.pushEvent("intake.began");
+        return true;
     }
 
-    void endIntake() {
+    public boolean feedLauncher() {
+        //if(currentState.indexSensor |! hasNote()) return false;
+        if(currentState.active) return false;
+        currentState.indexRoller = true;
+        currentState.active = true;
+        Hardware.intakeIndexerRoller.set(ControlMode.PercentOutput, Constants.Intake.indexRollerFeedLauncherPower);
+        return true;
+    }
+
+    public void cancelFeed() {
+        if (currentState.indexRoller && currentState.active && !currentState.floorRoller) {
+            idleIntake();
+        }
+    }
+
+    public void idleIntake() {
         Hardware.intakeFloorRoller.set(ControlMode.Disabled, 0);
         Hardware.intakeIndexerRoller.set(ControlMode.Disabled, 0);
         currentState.floorRoller = false;
         currentState.indexRoller = false;
+        currentState.active = false;
     }
     
     //returns true when the intake has finished its action and a note is inside the bot
-    boolean intakeFinished() {
+    public boolean intakeFinished() {
         if(currentState.hasNote) return true;
         else if(currentState.indexSensor) {
             Subsystems.telemetry.pushEvent("intake.finished");
-            endIntake();
+            idleIntake();
             currentState.hasNote = true;
             return true;
         }
@@ -123,11 +140,11 @@ public class Intake implements IPeriodicTask{
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.intakeButton)) {
             intakeNote();
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.intakeButton)) {
-            endIntake();
+            idleIntake();
         }
     }
 
     public void onStop() {
-        endIntake();
+        idleIntake();
     }
 }

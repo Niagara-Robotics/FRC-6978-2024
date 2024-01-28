@@ -26,15 +26,23 @@ public class Constants {
 
     public static class Launcher {
         public static double rotorToMeters = 5;
+        //60,12
+        public static double defaultVelocity = 6.8;
 
-        public static double stage1Voltage = 8;
+        public static double stage1Voltage = 1.5;
 
-        public static double stage2Tolerance = 0.2;
+        public static double stage2Tolerance = 2;
+
+        public static double kP = 0.0;
+        public static double left_kV = 7.04 / 61;
+        public static double right_kV = 7.04 / 64;
+        public static double kS = 0.15;
     }
 
     public static class Intake {
         public static double floorRollerPower = 0.6;
         public static double indexRollerPower = 0.2;
+        public static double indexRollerFeedLauncherPower = 0.6;
     }
 
     public static class DriverControls {
