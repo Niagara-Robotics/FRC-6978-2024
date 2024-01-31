@@ -59,6 +59,10 @@ public class TwoSidedLauncher implements IPeriodicTask {
             (Math.abs(linearVelocity.getValue() - rightStage2VelocitySignal.getValue()) < Constants.Launcher.stage2Tolerance);
     }
 
+    public boolean finished() {
+        return shotTimer.get() > 0.5;
+    }
+
     void velocityParametersUpdated() {
         leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue()); //TODO: roto to meters
         rightStage2Control.Velocity = (linearVelocity.getValue() - spinVelocity.getValue());

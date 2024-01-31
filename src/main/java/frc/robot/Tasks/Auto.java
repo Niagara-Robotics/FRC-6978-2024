@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.AutoCommands.IntakeCommand;
+import frc.robot.AutoCommands.ShootCommand;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Subsystems;
@@ -48,10 +49,13 @@ public class Auto implements IPeriodicTask {
                 dummySubsytem // Reference to this subsystem to set requirements
         );
 
-        testAuto = AutoBuilder.buildAuto("New Auto");
-
         IntakeCommand intakeCommand = new IntakeCommand();
         NamedCommands.registerCommand("Intake", intakeCommand);
+
+        ShootCommand shootCommand = new ShootCommand();
+        NamedCommands.registerCommand("Shoot", shootCommand);
+
+        testAuto = AutoBuilder.buildAuto("SingleNoteLeave");
     }
     
     public List<RunContext> getAllowedRunContexts() { 
