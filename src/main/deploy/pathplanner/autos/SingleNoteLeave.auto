@@ -2,7 +2,7 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.9424936616469277,
+      "x": 1.3713120537352175,
       "y": 5.527832473390935
     },
     "rotation": 0.0
@@ -14,19 +14,39 @@
         {
           "type": "named",
           "data": {
-            "name": "shoot"
+            "name": "Shoot"
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "enableIntake"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "MoveBackNote"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "MoveBackNote"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "Intake"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
           }
         }
       ]
