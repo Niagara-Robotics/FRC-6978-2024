@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.Parameter;
 import frc.robot.Framework.RunContext;
@@ -20,6 +21,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
     //TODO: calibrate launcher PIDs
     VelocityVoltage leftStage2Control;
     VelocityVoltage rightStage2Control;
+    VelocityVoltage stage1VelocityControl;
     //left and right stage 1 motors share a control object
     VoltageOut stage1Control;
 
@@ -34,12 +36,16 @@ public class TwoSidedLauncher implements IPeriodicTask {
     //positive values curve the note to the right, negative curves to the left
     public Parameter<Double> spinVelocity;
 
+    Timer shotTimer;
+
     public void launchNote() {
         Hardware.leftLauncherStage2.setControl(leftStage2Control);
         Hardware.rightLauncherStage2.setControl(rightStage2Control);
+        Hardware.leftLauncherStage1.setControl(stage1VelocityControl);
+        Hardware.rightLauncherStage1.setControl(stage1VelocityControl);
 
-        Hardware.leftLauncherStage1.setControl(new CoastOut());
-        Hardware.rightLauncherStage1.setControl(new CoastOut());
+        //Hardware.leftLauncherStage1.setControl(new CoastOut());
+        //Hardware.rightLauncherStage1.setControl(new CoastOut());
         stage2Active = true;
     }
 
@@ -50,6 +56,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
         Hardware.rightLauncherStage2.setControl(new CoastOut());
         stage1Active = false;
         stage2Active = false;
+        Subsystems.intake.cancelFeed();
     }
 
     //returns whether the stage 2 rollers are within tolerances and ready to launch a note
@@ -85,6 +92,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
         rightStage2VelocitySignal.setUpdateFrequency(63);
 
         stage1Control = new VoltageOut(Constants.Launcher.stage1Voltage);
+        stage1VelocityControl= new VelocityVoltage(Constants.Launcher.stage1Velocity);
 
         leftStage2Control = new VelocityVoltage(0);
         rightStage2Control = new VelocityVoltage(0);
@@ -101,16 +109,19 @@ public class TwoSidedLauncher implements IPeriodicTask {
         spinVelocity.onValueUpdated = value -> velocityParametersUpdated();
 
         stopLauncher();
+
+        shotTimer = new Timer();
+        shotTimer.stop();
+        shotTimer.reset();
     }
 
     public void onLoop(RunContext ctx) {
         BaseStatusSignal.refreshAll(leftStage2VelocitySignal, rightStage2VelocitySignal);
 
-        if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.launcherButton)) {
+        if(Hardware.operatorStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
             launchNote();
-        } else if (Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.launcherButton)) {
+        } else if (Hardware.operatorStick.getRawButtonReleased(Constants.OperatorControls.launcherButton)) {
             stopLauncher();
-            Subsystems.intake.cancelFeed();
         }
 
         Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
@@ -118,8 +129,10 @@ public class TwoSidedLauncher implements IPeriodicTask {
         if(stage2Ready() && !stage1Active && stage2Active) {
             stage1Active = true;
             Subsystems.intake.feedLauncher();
-            Hardware.leftLauncherStage1.setControl(stage1Control);
-            Hardware.rightLauncherStage1.setControl(stage1Control);
+            shotTimer.reset();
+            shotTimer.start();
+            //Hardware.leftLauncherStage1.setControl(stage1Control);
+            //Hardware.rightLauncherStage1.setControl(stage1Control);
         }
         //note exit counter is connected to a prox sensor at the end of the shooter
         //exit counter will reach 2 once a note has fully cleared the sensor(2 rising edges on the signal)

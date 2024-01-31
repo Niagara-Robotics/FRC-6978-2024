@@ -27,10 +27,13 @@ public class Constants {
     public static class Launcher {
         public static double rotorToMeters = 5;
         //60,12
-        public static double defaultVelocity = 6.8;
+        //default stage 2 velocity target(this is also parameterized)
+        public static double defaultVelocity = 70;
 
-        public static double stage1Voltage = 1.5;
+        public static double stage1Voltage = 10;
+        public static double stage1Velocity = 70;
 
+        //+/- this value automatically starts the stage 1 rollers and the intake feeder(index roller)
         public static double stage2Tolerance = 2;
 
         public static double kP = 0.0;
@@ -40,9 +43,9 @@ public class Constants {
     }
 
     public static class Intake {
-        public static double floorRollerPower = 0.6;
+        public static double floorRollerPower = 0.8;
         public static double indexRollerPower = 0.2;
-        public static double indexRollerFeedLauncherPower = 0.6;
+        public static double indexRollerFeedLauncherPower = 0.9;
     }
 
     public static class DriverControls {
@@ -50,10 +53,10 @@ public class Constants {
         public static int forwardAxis = 4;
         public static int reverseAxis = 3;
 
-        public static int launcherButton = 2;
         public static int intakeButton = 3;
     }
 
     public static class OperatorControls {
+        public static int launcherButton = 2;
     }
 }

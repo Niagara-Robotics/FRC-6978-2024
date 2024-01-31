@@ -88,11 +88,14 @@ public class Hardware {
         launcherConfiguration.Slot0.kS = Constants.Launcher.kS;
 
         leftLauncherStage2.getConfigurator().apply(launcherConfiguration);
+        leftLauncherStage1.getConfigurator().apply(launcherConfiguration);
+        rightLauncherStage1.getConfigurator().apply(launcherConfiguration);
 
         launcherConfiguration.Slot0.kV = Constants.Launcher.right_kV;
         rightLauncherStage2.getConfigurator().apply(launcherConfiguration);
 
         rightLauncherStage2.setInverted(true);
+        rightLauncherStage1.setInverted(true);
 
         //other
         navX.reset();

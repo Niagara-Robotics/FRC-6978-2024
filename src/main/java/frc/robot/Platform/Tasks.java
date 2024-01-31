@@ -13,7 +13,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.differentialDrive,
         (IPeriodicTask)Subsystems.intake,
         (IPeriodicTask)Subsystems.auto,
-        //(IPeriodicTask)Subsystems.launcher,
+        (IPeriodicTask)Subsystems.launcher,
     };
 
     public static IPeriodicTask[] idleTasks = {

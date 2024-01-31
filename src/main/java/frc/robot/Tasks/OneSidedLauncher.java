@@ -79,11 +79,11 @@ public class OneSidedLauncher implements IPeriodicTask {
 
     public void onLoop(RunContext ctx) {
         if(
-            Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.launcherButton) 
+            Hardware.operatorStick.getRawButtonPressed(Constants.OperatorControls.launcherButton) 
             && Subsystems.intake.hasNote()
         ) {
             startLauncher();
-        } else if (Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.launcherButton)) {
+        } else if (Hardware.operatorStick.getRawButtonReleased(Constants.OperatorControls.launcherButton)) {
             stopLauncher();
         }
 
