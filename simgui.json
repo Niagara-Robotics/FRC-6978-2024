@@ -1,10 +1,24 @@
 {
   "HALProvider": {
-    "RoboRIO": {
-      "5V Rail": {
-        "open": true
+    "Other Devices": {
+      "SPARK MAX [40]": {
+        "header": {
+          "open": true
+        }
       },
-      "6V Rail": {
+      "Talon FX (v6)[30]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[30]/Rotor Sensor": {
+        "header": {
+          "open": true
+        }
+      }
+    },
+    "RoboRIO": {
+      "RoboRIO Input": {
         "open": true
       },
       "window": {

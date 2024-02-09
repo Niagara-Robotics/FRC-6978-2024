@@ -68,6 +68,9 @@ public class DifferentialDrive implements IPeriodicTask{
             default:
                 break;
         }
+        Subsystems.telemetry.pushDouble("leftApplied", Hardware.leftDriveLeader.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushDouble("rightApplied", Hardware.rightDriveLeader.getMotorVoltage().getValue());
+
     }
 
     public DriveMode getMode() {
@@ -79,8 +82,8 @@ public class DifferentialDrive implements IPeriodicTask{
         //setBrake(false);
         leftVelocityRequest = new VelocityVoltage(0);
         rightVelocityRequest = new VelocityVoltage(0);
-        leftVelocityRequest.UpdateFreqHz = 60;
-        rightVelocityRequest.UpdateFreqHz = 60;
+        leftVelocityRequest.UpdateFreqHz = 66;
+        rightVelocityRequest.UpdateFreqHz = 66;
 
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);

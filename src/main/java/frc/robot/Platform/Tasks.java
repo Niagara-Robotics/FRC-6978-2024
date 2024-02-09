@@ -7,6 +7,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.differentialDrive,
         (IPeriodicTask)Subsystems.intake,
         (IPeriodicTask)Subsystems.launcher,
+        //(IPeriodicTask)Subsystems.lift,
     };
 
     public static IPeriodicTask[] autonomousTasks = {

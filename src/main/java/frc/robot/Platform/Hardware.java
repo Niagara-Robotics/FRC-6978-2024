@@ -7,6 +7,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.Compressor;
@@ -32,8 +34,13 @@ public class Hardware {
     public static TalonFX rightLauncherStage1 = new TalonFX(23);
     public static TalonFX rightLauncherStage2 = new TalonFX(22);
 
+    public static TalonFX launcherTiltMotor = new TalonFX(30);
+
     public static TalonSRX intakeFloorRoller = new TalonSRX(10);
-    public static TalonSRX intakeIndexerRoller = new TalonSRX(11);
+    public static TalonSRX liftMotor = new TalonSRX(11);
+    public static TalonSRX secondaryLiftMotor = new TalonSRX(12);
+
+    public static CANSparkMax intakeIndexerRoller = new CANSparkMax(40, MotorType.kBrushless);
 
     //Pneumatics
     public static Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
@@ -96,6 +103,17 @@ public class Hardware {
 
         rightLauncherStage2.setInverted(true);
         rightLauncherStage1.setInverted(true);
+
+        TalonFXConfiguration launcherTiltConfiguration = new TalonFXConfiguration();
+        launcherTiltConfiguration.Feedback.SensorToMechanismRatio = Constants.Launcher.tiltRotorToMechanismRatio;
+        launcherTiltConfiguration.Voltage.PeakForwardVoltage = Constants.Launcher.tiltMaxOutputUp;
+        launcherTiltConfiguration.Voltage.PeakReverseVoltage = -Constants.Launcher.tiltMaxOutputDown;
+        launcherTiltConfiguration.Slot0.kP = Constants.Launcher.tiltKp;
+        launcherTiltConfiguration.Slot0.kG = Constants.Launcher.tiltKg;
+        launcherTiltConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        launcherTiltMotor.getConfigurator().apply(launcherTiltConfiguration);
+        launcherTiltMotor.setPosition(Constants.Launcher.tiltDefaultPosition);
 
         //other
         navX.reset();

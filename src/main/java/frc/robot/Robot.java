@@ -1,6 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Hardware;
@@ -9,9 +10,10 @@ import frc.robot.Platform.Subsystems;
 import frc.robot.Platform.Tasks;
 
 public class Robot extends TimedRobot{
+    Timer loopTimer;
 
     public Robot() {
-        super(0.011);
+        super(0.015);
     }
     
     @Override
@@ -23,13 +25,19 @@ public class Robot extends TimedRobot{
         for(IPeriodicTask task : Tasks.idleTasks) {
             Schedulers.idleScheduler.add(RunContext.disabled, task);
         }
+        loopTimer = new Timer();
+        loopTimer.reset();
+        loopTimer.start();
     }
 
     @Override
     protected void loopFunc() {
         Subsystems.telemetry.openFrame();
+        Subsystems.telemetry.pushDouble("robot.looptime", loopTimer.get());
+        loopTimer.restart();
         super.loopFunc();
-        //Subsystems.telemetry.closeFrame();
+        Subsystems.telemetry.closeFrame();
+        
     }
 
     @Override

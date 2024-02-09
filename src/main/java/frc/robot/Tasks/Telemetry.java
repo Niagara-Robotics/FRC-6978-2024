@@ -16,7 +16,7 @@ import java.util.Map.Entry;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Framework.RunContext;
 
@@ -129,8 +129,7 @@ public class Telemetry {
         if(!sessionOpen) return;
         if(file == null) return;
         long saveStartTS = System.nanoTime();
-
-        if(numFramesTotal % frequency == 0) {
+        if(numFramesTotal % frequency == 0 && RobotBase.isReal()) {
 
             try {
                 if(numFramesSaved < 1) {

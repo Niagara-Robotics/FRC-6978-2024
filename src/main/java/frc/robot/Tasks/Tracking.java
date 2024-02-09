@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import frc.robot.Framework.IPeriodicTask;
+import frc.robot.Framework.PoseStreamerClient;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Constants;
 import frc.robot.Platform.Hardware;
@@ -32,6 +33,8 @@ public class Tracking implements IPeriodicTask {
 
     StatusSignal<Double> leftVelocity;
     StatusSignal<Double> rightVelocity;
+
+    PoseStreamerClient client;
 
     void initOdometry() {
         leftPosition = Hardware.leftDriveLeader.getPosition();
@@ -101,6 +104,13 @@ public class Tracking implements IPeriodicTask {
 
     public void onStart(RunContext ctx) {
         initOdometry();
+        client = new PoseStreamerClient("frc-6978-vision.local", 8833);
+        /*client.start();
+        client.requestPose(1, 1, (values) -> {
+            for(int i=0; i<values.size(); i++) {
+                Subsystems.telemetry.pushDouble("tracking.cameraPose" + i, values.get(i));
+            }
+        });*/
     }
 
     public void onLoop(RunContext ctx) {

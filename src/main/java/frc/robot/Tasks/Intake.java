@@ -48,7 +48,7 @@ public class Intake implements IPeriodicTask{
         if(currentState.indexSensor || hasNote()) return false;
 
         Hardware.intakeFloorRoller.set(ControlMode.PercentOutput, Constants.Intake.floorRollerPower);
-        Hardware.intakeIndexerRoller.set(ControlMode.PercentOutput, Constants.Intake.indexRollerPower);
+        Hardware.intakeIndexerRoller.set(Constants.Intake.indexRollerPower);
     
         currentState.floorRoller = true;
         currentState.indexRoller = true;
@@ -61,7 +61,7 @@ public class Intake implements IPeriodicTask{
         if(currentState.active) return false;
         currentState.indexRoller = true;
         currentState.active = true;
-        Hardware.intakeIndexerRoller.set(ControlMode.PercentOutput, Constants.Intake.indexRollerFeedLauncherPower);
+        Hardware.intakeIndexerRoller.set(Constants.Intake.indexRollerFeedLauncherPower);
         return true;
     }
 
@@ -73,7 +73,7 @@ public class Intake implements IPeriodicTask{
 
     public void idleIntake() {
         Hardware.intakeFloorRoller.set(ControlMode.Disabled, 0);
-        Hardware.intakeIndexerRoller.set(ControlMode.Disabled, 0);
+        Hardware.intakeIndexerRoller.set(0);
         currentState.floorRoller = false;
         currentState.indexRoller = false;
         currentState.active = false;
@@ -105,7 +105,7 @@ public class Intake implements IPeriodicTask{
         if(currentState != null)
         previousState = currentState;
 
-        currentState.floorSensor = !Hardware.floorSensor.get();
+        currentState.floorSensor = Hardware.floorSensor.get();
         currentState.indexSensor = !Hardware.indexSensor.get();
     }
 
@@ -119,8 +119,9 @@ public class Intake implements IPeriodicTask{
 
     public void onStart(RunContext ctx) {
         Hardware.intakeFloorRoller.set(ControlMode.Disabled, 0);
-        Hardware.intakeIndexerRoller.set(ControlMode.Disabled, 0);
+        Hardware.intakeIndexerRoller.set(0);
         evaluateSensors();
+        currentState.hasNote = false;
         if (currentState.indexSensor) {
             currentState.hasNote = true;
             Subsystems.telemetry.pushEvent("intake.assumedNotePresent");
@@ -140,7 +141,7 @@ public class Intake implements IPeriodicTask{
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.intakeButton)) {
             intakeNote();
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.intakeButton)) {
-            idleIntake();
+            //idleIntake();
         }
     }
 

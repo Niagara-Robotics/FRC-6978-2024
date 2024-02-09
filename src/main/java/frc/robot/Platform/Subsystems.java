@@ -1,5 +1,6 @@
 package frc.robot.Platform;
 
+import frc.robot.Tasks.Lift;
 import frc.robot.Tasks.Auto;
 import frc.robot.Tasks.DifferentialDrive;
 import frc.robot.Tasks.Intake;
@@ -13,6 +14,7 @@ public class Subsystems {
     public static Intake intake = new Intake();
     public static TwoSidedLauncher launcher = new TwoSidedLauncher();
     public static DifferentialDrive differentialDrive = new DifferentialDrive();
+    public static Lift lift = new Lift();
     public static Tracking tracking = new Tracking();
     
     public static Auto auto = new Auto();
