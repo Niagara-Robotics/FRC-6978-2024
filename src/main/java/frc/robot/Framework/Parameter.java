@@ -1,5 +1,6 @@
 package frc.robot.Framework;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -16,6 +17,7 @@ public class Parameter<T> {
 
     public Parameter(T defaultValue) {
         value = defaultValue;
+        handles = new LinkedList<ParameterHandle<T>>();
     }
 
     public ParameterHandle<T> getHandle(String name) {
@@ -29,7 +31,7 @@ public class Parameter<T> {
     }
 
     public boolean takeControl(ParameterHandle<T> handle, boolean exclusive) {
-        if(controllingHandle.equals(handle)) return true;
+        if(handle.equals(controllingHandle)) return true;
         if(exclusiveControllingHandle) return false;
         controllingHandle = handle;
         exclusiveControllingHandle = exclusive;
@@ -37,14 +39,14 @@ public class Parameter<T> {
     }
 
     public boolean releaseControl(ParameterHandle<T> handle) {
-        if(!controllingHandle.equals(handle)) return false;
+        if(!handle.equals(controllingHandle)) return false;
         exclusiveControllingHandle = false;
         controllingHandle = null;
         return true;
     }
 
     public boolean hasControl(ParameterHandle<T> handle) {
-        return controllingHandle.equals(handle);
+        return handle.equals(controllingHandle);
     }
 
     public boolean setValue(ParameterHandle<T> handle, T value) {

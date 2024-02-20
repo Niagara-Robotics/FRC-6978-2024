@@ -93,5 +93,7 @@ public class OneSidedLauncher implements IPeriodicTask {
         }
     }
 
+    public void publishTelemetry() {}
+
     public void onStop() {}
 }

@@ -27,6 +27,8 @@ public class PoseStreamerClient extends Thread {
         int pose_class;
         int object_id;
         Consumer <List<Double>> callback;
+        long send_ts;
+        int id;
 
         public StreamRequest(int pose_class, int object_id) {
             this.pose_class = pose_class;
@@ -36,6 +38,10 @@ public class PoseStreamerClient extends Thread {
 
         public StreamRequest setCallback(Consumer <List<Double>> callback) {
             this.callback = callback;
+            return this;
+        }
+        public StreamRequest setId(int id) {
+            this.id = id;
             return this;
         }
     }
@@ -59,7 +65,9 @@ public class PoseStreamerClient extends Thread {
     }
 
     public void requestPose(int poseClass, int objectId, Consumer<List<Double>> poseCallback) {
-        wantedPoses.add(new StreamRequest(poseClass, objectId).setCallback(poseCallback));
+        wantedPoses.add(new StreamRequest(poseClass, objectId).setCallback(poseCallback).setId(requestid));
+        requestid++;
+        if(requestid > 255) requestid = 0;
     }
 
     void sendPacketHeader(int packetType, int headerLength) throws IOException {
@@ -71,12 +79,13 @@ public class PoseStreamerClient extends Thread {
         sendPacketHeader(0x01, 3);
 
         output.writeByte(0x10); //request type: initiate stream
-        output.writeByte(0); //request id
+        output.writeByte(streamRequest.id); //request id
         output.writeByte(2); //Request size
 
         output.writeByte(streamRequest.pose_class);
         output.writeByte(streamRequest.object_id);
         System.out.println("PoseStreamer: sent stream request");
+        streamRequest.send_ts = System.nanoTime();
     }
 
     void readStreamData() throws IOException {
@@ -105,6 +114,23 @@ public class PoseStreamerClient extends Thread {
         }
     }
 
+    void readRequestResponse() throws IOException {
+        int request_type = input.readByte();
+        int request_id = input.readByte();
+        int status_code = input.readByte();
+
+        System.out.println("streamreq id " + request_id);
+        System.out.println("streamreq type" + request_type);
+
+        if(request_type != 16) return;
+        for (StreamRequest streamRequest : wantedPoses) {
+            if(request_id == streamRequest.id) {
+                System.out.println("PoseStreamer: request response received");
+                streamRequest.status = StreamRequestStatus.accepted;
+            }
+        }
+    }
+
     public boolean connect() {
         try {
             m_socket = new Socket(host, port);
@@ -112,6 +138,12 @@ public class PoseStreamerClient extends Thread {
 
             input = new DataInputStream(m_socket.getInputStream());
             output = new DataOutputStream(m_socket.getOutputStream());
+            try {
+                sleep(250);
+
+            } catch (InterruptedException e) {
+                return false;
+            }
         } catch (UnknownHostException u) {
             System.out.println("PoseStreamer: unknown host");
             return false;
@@ -142,8 +174,10 @@ public class PoseStreamerClient extends Thread {
     }
 
     public void run() {
+        requestid = 0;
         while(true) {
             if(!connected || m_socket.isClosed()) {
+                requestid = 0;
                 close();
                 connected = connect();
                 if(!connected) {
@@ -158,7 +192,7 @@ public class PoseStreamerClient extends Thread {
             }
 
             try {
-                if((System.nanoTime() - lastHeartBeat) > 500000) {
+                if((System.nanoTime() - lastHeartBeat) > 500000000) {
                     output.writeByte(0x03);
                     output.writeByte(0);
                     lastHeartBeat = System.nanoTime();
@@ -171,6 +205,8 @@ public class PoseStreamerClient extends Thread {
                         case 0x10:
                             readStreamData();
                             break;
+                        case 0x02:
+                            readRequestResponse();
                         default:
                             break;
                     }
@@ -181,10 +217,21 @@ public class PoseStreamerClient extends Thread {
                         sendStreamRequest(streamRequest);
                         streamRequest.status = StreamRequestStatus.sent;
                     }
+                    if(streamRequest.status == StreamRequestStatus.sent) {
+                        if((System.nanoTime() - streamRequest.send_ts) >500000000) {
+                            streamRequest.status = StreamRequestStatus.none;
+                            System.out.println("PoseStreamer: Stream request timed out");
+                        }
+                    }
                 }
             } catch (IOException i) {
                 connected = false;
                 System.out.println("disconnecting");
+            }
+            try {
+                        sleep(1);
+            } catch(InterruptedException i) {
+                        return;
             }
         }
     }

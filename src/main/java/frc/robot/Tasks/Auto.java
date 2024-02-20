@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.AutoCommands.IntakeCommand;
+import frc.robot.AutoCommands.LowerLauncherCommand;
+import frc.robot.AutoCommands.RaiseLauncherCommand;
 import frc.robot.AutoCommands.ShootCommand;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
@@ -55,6 +57,12 @@ public class Auto implements IPeriodicTask {
         ShootCommand shootCommand = new ShootCommand();
         NamedCommands.registerCommand("Shoot", shootCommand);
 
+        RaiseLauncherCommand raiseLauncherCommand = new RaiseLauncherCommand();
+        NamedCommands.registerCommand("RaiseLauncher", raiseLauncherCommand);
+
+        LowerLauncherCommand lowerLauncherCommand = new LowerLauncherCommand();
+        NamedCommands.registerCommand("LowerLauncher", lowerLauncherCommand);
+
         testAuto = AutoBuilder.buildAuto("SingleNoteLeave");
     }
     
@@ -78,6 +86,8 @@ public class Auto implements IPeriodicTask {
         }
         testAuto.execute();
     }
+
+    public void publishTelemetry() {}
 
     public void onStop() {
         testAuto.end(true);

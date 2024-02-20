@@ -5,6 +5,7 @@ public class PIDController {
     double target;
     double lastError;
     double integralAccumulator;
+    double limit;
     boolean firstCycle;
 
     public PIDController(double kP, double kI, double kD) {
@@ -16,6 +17,10 @@ public class PIDController {
     public void init() {
         firstCycle = true;
         integralAccumulator = 0;
+    }
+
+    public void setLimit(double limit) {
+        this.limit = limit;
     }
 
     public void set(double target) {
@@ -30,7 +35,7 @@ public class PIDController {
         integralAccumulator += error;
 
         proportional = error * kP;
-        integral = integralAccumulator * kP;
+        integral = integralAccumulator * kI;
         if(!firstCycle)  {
             derivative = (error - lastError);
         } else {
@@ -39,6 +44,11 @@ public class PIDController {
         }
         lastError = error;
 
-        return proportional + integral + derivative;
+        double output = proportional + integral + (derivative * kP);
+
+        output = (output>limit)? limit : output;
+        output = (output<-limit)? -limit : output;
+
+        return output;
     }
 }

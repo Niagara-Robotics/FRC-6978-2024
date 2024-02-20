@@ -1,17 +1,17 @@
 {
   "HALProvider": {
+    "DIO": {
+      "window": {
+        "visible": true
+      }
+    },
     "Other Devices": {
-      "SPARK MAX [40]": {
+      "Talon FX (v6)[1]": {
         "header": {
           "open": true
         }
       },
       "Talon FX (v6)[30]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Talon FX (v6)[30]/Rotor Sensor": {
         "header": {
           "open": true
         }
@@ -34,6 +34,9 @@
   "NetworkTables": {
     "transitory": {
       "PathPlanner": {
+        "HotReload": {
+          "open": true
+        },
         "open": true
       },
       "SmartDashboard": {

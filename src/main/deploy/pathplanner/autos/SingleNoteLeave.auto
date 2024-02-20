@@ -2,7 +2,7 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.3713120537352175,
+      "x": 1.36,
       "y": 5.527832473390935
     },
     "rotation": 0.0
@@ -11,6 +11,12 @@
     "type": "sequential",
     "data": {
       "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "RaiseLauncher"
+          }
+        },
         {
           "type": "named",
           "data": {
@@ -25,6 +31,12 @@
                 "type": "path",
                 "data": {
                   "pathName": "MoveBackNote"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "LowerLauncher"
                 }
               },
               {
@@ -47,6 +59,100 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "RaiseLauncher"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "returnNote"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "LowerLauncher"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "pickupLowerNote"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.2
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "Intake"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "RaiseLauncher"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "returnFromLowerNote"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "LowerLauncher"
           }
         }
       ]

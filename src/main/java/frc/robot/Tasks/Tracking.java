@@ -36,19 +36,25 @@ public class Tracking implements IPeriodicTask {
 
     PoseStreamerClient client;
 
+    public double shotTargetX;
+    public double shotTargetY;
+
+    public double robotX;
+    public double robotY;
+
     void initOdometry() {
         leftPosition = Hardware.leftDriveLeader.getPosition();
         rightPosition = Hardware.rightDriveLeader.getPosition();
 
         //change the update frequency depending on the loop time
-        leftPosition.setUpdateFrequency(63);
-        rightPosition.setUpdateFrequency(63);
+        leftPosition.setUpdateFrequency(200);
+        rightPosition.setUpdateFrequency(200);
 
         leftVelocity = Hardware.leftDriveLeader.getVelocity();
         rightVelocity = Hardware.rightDriveLeader.getVelocity();
 
-        leftVelocity.setUpdateFrequency(63);
-        rightVelocity.setUpdateFrequency(63);
+        leftVelocity.setUpdateFrequency(200);
+        rightVelocity.setUpdateFrequency(200);
 
         odometry = new DifferentialDriveOdometry(
             Hardware.navX.getRotation2d(),
@@ -64,11 +70,6 @@ public class Tracking implements IPeriodicTask {
             leftPosition.getValue() * Constants.Drive.rotorToMeters, 
             rightPosition.getValue() * Constants.Drive.rotorToMeters
         );
-
-        Subsystems.telemetry.pushDouble("odometryX", pose.getX());
-        Subsystems.telemetry.pushDouble("odometryY", pose.getY());
-        Subsystems.telemetry.pushDouble("leftPosition", leftPosition.getValue());
-        Subsystems.telemetry.pushDouble("rightPosition", rightPosition.getValue());
     }
 
     public void setOdometryPose(Pose2d pose) {
@@ -81,8 +82,8 @@ public class Tracking implements IPeriodicTask {
 
     public ChassisSpeeds getChassisSpeeds() {
         DifferentialDriveWheelSpeeds wheelSpeeds = new DifferentialDriveWheelSpeeds(
-            leftVelocity.getValue(),
-            rightVelocity.getValue()
+            leftVelocity.getValue()  * Constants.Drive.rotorToMeters,
+            rightVelocity.getValue() * Constants.Drive.rotorToMeters
         );
 
         return Hardware.kinematics.toChassisSpeeds(wheelSpeeds);
@@ -105,19 +106,37 @@ public class Tracking implements IPeriodicTask {
     public void onStart(RunContext ctx) {
         initOdometry();
         client = new PoseStreamerClient("frc-6978-vision.local", 8833);
-        /*client.start();
+        client.start();
         client.requestPose(1, 1, (values) -> {
             for(int i=0; i<values.size(); i++) {
                 Subsystems.telemetry.pushDouble("tracking.cameraPose" + i, values.get(i));
             }
-        });*/
+            robotX = -values.get(0);
+            robotY = values.get(1);
+        });
+
+        client.requestPose(2, 4, (values) -> {
+            for(int i=0; i<values.size(); i++) {
+                Subsystems.telemetry.pushDouble("tracking.tagPose" + i, values.get(i));
+            }
+            shotTargetX = values.get(0);
+            shotTargetY = values.get(1);
+        });
+    }
+
+    public void publishTelemetry() {
+        Subsystems.telemetry.pushDouble("tracking.odometryX", odometry.getPoseMeters().getX());
+        Subsystems.telemetry.pushDouble("tracking.odometryY", odometry.getPoseMeters().getY());
+        Subsystems.telemetry.pushDouble("tracking.leftPosition", leftPosition.getValue());
+        Subsystems.telemetry.pushDouble("tracking.rightPosition", rightPosition.getValue());
+        Subsystems.telemetry.pushDouble("tracking.theta", getFieldRelativeRotation().getDegrees());
+        Subsystems.telemetry.pushDouble("tracking.omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRate()));
     }
 
     public void onLoop(RunContext ctx) {
-        BaseStatusSignal.refreshAll(leftPosition, rightPosition);
+        BaseStatusSignal.refreshAll(leftPosition, rightPosition, rightVelocity, leftVelocity);
 
         updateOdometry();
-        Subsystems.telemetry.pushDouble("theta", getFieldRelativeRotation().getDegrees());
     }
 
     public void onStop() {}

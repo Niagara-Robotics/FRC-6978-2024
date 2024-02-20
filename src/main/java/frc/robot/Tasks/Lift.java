@@ -41,6 +41,11 @@ public class Lift implements IPeriodicTask {
         }
     }
 
+    public void publishTelemetry() {
+        // TODO Auto-generated method stub
+        
+    }
+
     public void onStop() {
 
     }

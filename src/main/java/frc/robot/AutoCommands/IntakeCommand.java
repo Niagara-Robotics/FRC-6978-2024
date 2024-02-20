@@ -10,19 +10,19 @@ public class IntakeCommand extends Command {
     @Override
     public void initialize() {
         Subsystems.intake.intakeNote();
-        timer = new Timer();
-        timer.start();
+        //timer = new Timer();
+        //timer.start();
     }
 
     @Override
     public boolean isFinished() {
-        //return Subsystems.intake.hasNote();
-        return timer.get() > 3.0;
+        return Subsystems.intake.hasNote();
+        //return timer.get() > 3.0;
     }
 
     @Override
     public void end(boolean interrupted) {
-        //if(!interrupted) return; //dont call endIntake because it ends itself
+        if(!interrupted) return; //dont call endIntake because it ends itself
         Subsystems.intake.idleIntake();
     }
 }

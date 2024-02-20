@@ -55,6 +55,7 @@ public class Hardware {
     //Human input devices
     public static Joystick driverStick = new Joystick(0);
     public static Joystick operatorStick = new Joystick(1);
+    public static Joystick guestStick = new Joystick(2);
 
     public static DifferentialDriveKinematics kinematics;
 
@@ -121,6 +122,7 @@ public class Hardware {
         kinematics = new DifferentialDriveKinematics(Constants.Drive.trackWidth);
 
         intakeFloorRoller.setInverted(true);
+        intakeIndexerRoller.setControlFramePeriodMs(5);
 
         noteExitCounter.setUpSource(2);
         noteExitCounter.setUpSourceEdge(false, true);

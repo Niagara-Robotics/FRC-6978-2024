@@ -12,6 +12,8 @@ public interface IPeriodicTask {
     //Called once each frame while this task is in context
     public void onLoop(RunContext context);
 
+    public void publishTelemetry();
+
     //Used to retrieve a list of RunContexts that this task may run inside of
     public List<RunContext> getAllowedRunContexts();
 }

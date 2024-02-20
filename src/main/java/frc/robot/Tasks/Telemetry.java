@@ -192,6 +192,8 @@ public class Telemetry {
             file.close();
         } catch (IOException e) {
             System.out.println("Unable to close file");
+        } catch(NullPointerException e) {
+            
         }
         sessionOpen = false;
     }

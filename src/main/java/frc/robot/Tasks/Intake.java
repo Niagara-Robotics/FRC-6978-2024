@@ -123,6 +123,7 @@ public class Intake implements IPeriodicTask{
         evaluateSensors();
         currentState.hasNote = false;
         if (currentState.indexSensor) {
+            System.out.println("assuming note already loaded");
             currentState.hasNote = true;
             Subsystems.telemetry.pushEvent("intake.assumedNotePresent");
         }
@@ -130,19 +131,24 @@ public class Intake implements IPeriodicTask{
 
     public void onLoop(RunContext ctx) {
         evaluateSensors();
-        Subsystems.telemetry.pushBoolean("intake.floorSensor", currentState.floorSensor);
-        Subsystems.telemetry.pushBoolean("intake.indexSensor", currentState.indexSensor);
-        Subsystems.telemetry.pushBoolean("intake.floorRoller", currentState.floorRoller);
-        Subsystems.telemetry.pushBoolean("intake.indexRoller", currentState.indexRoller);
-        Subsystems.telemetry.pushBoolean("intake.hasNote", currentState.hasNote);
-        Subsystems.telemetry.pushBoolean("intake.finished", intakeFinished());
-        Subsystems.telemetry.pushBoolean("intake.active", currentState.active);
+
 
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.intakeButton)) {
             intakeNote();
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.intakeButton)) {
             //idleIntake();
         }
+        intakeFinished();
+    }
+
+    public void publishTelemetry() {
+        Subsystems.telemetry.pushBoolean("intake.indexSensor", currentState.indexSensor);
+        Subsystems.telemetry.pushBoolean("intake.floorRoller", currentState.floorRoller);
+        Subsystems.telemetry.pushBoolean("intake.indexRoller", currentState.indexRoller);
+        Subsystems.telemetry.pushBoolean("intake.hasNote", currentState.hasNote);
+        Subsystems.telemetry.pushBoolean("intake.active", currentState.active);
+        Subsystems.telemetry.pushDouble("intake.indexRollerApplied", Hardware.intakeIndexerRoller.getAppliedOutput());
+        Subsystems.telemetry.pushDouble("intake.floorRollerVoltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
     }
 
     public void onStop() {

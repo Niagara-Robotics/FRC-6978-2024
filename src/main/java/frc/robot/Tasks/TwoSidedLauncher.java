@@ -45,17 +45,40 @@ public class TwoSidedLauncher implements IPeriodicTask {
     //positive values curve the note to the right, negative curves to the left
     public Parameter<Double> spinVelocity;
 
+    public Parameter<Double> tilt;
+
     Timer shotTimer;
 
+    public TwoSidedLauncher() {
+        leftStage2VelocitySignal = Hardware.leftLauncherStage2.getVelocity();
+        rightStage2VelocitySignal = Hardware.rightLauncherStage2.getVelocity();
+        leftStage2VelocitySignal.setUpdateFrequency(200);
+        rightStage2VelocitySignal.setUpdateFrequency(200);
+        leftStage2Control = new VelocityVoltage(0);
+        rightStage2Control = new VelocityVoltage(0);
+        stage1VelocityControl= new VelocityVoltage(Constants.Launcher.stage1Velocity);
+
+        linearVelocity = new Parameter<Double>(Constants.Launcher.defaultVelocity);
+        spinVelocity = new Parameter<Double>(Constants.Launcher.defaultSpinVelocity);
+        linearVelocity.onValueUpdated = value -> velocityParametersUpdated();
+        spinVelocity.onValueUpdated = value -> velocityParametersUpdated();
+
+        tilt = new Parameter<Double>(Constants.Launcher.tiltDefaultPosition);
+        tilt.onValueUpdated = position -> setTiltPosition(position);
+    }
+
     public void launchNote() {
+        if(stage2Active) return;
         Hardware.leftLauncherStage2.setControl(leftStage2Control);
         Hardware.rightLauncherStage2.setControl(rightStage2Control);
-        //Hardware.leftLauncherStage1.setControl(stage1VelocityControl);
-        //Hardware.rightLauncherStage1.setControl(stage1VelocityControl);
+        Hardware.leftLauncherStage1.setControl(leftStage2Control);
+        Hardware.rightLauncherStage1.setControl(rightStage2Control);
 
-        Hardware.leftLauncherStage1.setControl(new CoastOut());
-        Hardware.rightLauncherStage1.setControl(new CoastOut());
+        //Hardware.leftLauncherStage1.setControl(new CoastOut());
+        //Hardware.rightLauncherStage1.setControl(new CoastOut());
         stage2Active = true;
+        shotTimer.stop();
+        shotTimer.reset();
     }
 
     public void stopLauncher() {
@@ -67,6 +90,8 @@ public class TwoSidedLauncher implements IPeriodicTask {
         stage2Active = false;
         Subsystems.intake.cancelFeed();
         Subsystems.intake.clearNote();
+        shotTimer.stop();
+        shotTimer.reset();
     }
 
     //returns whether the stage 2 rollers are within tolerances and ready to launch a note
@@ -77,7 +102,18 @@ public class TwoSidedLauncher implements IPeriodicTask {
     }
 
     public boolean finished() {
-        return shotTimer.get() > 0.5;
+        return shotTimer.get() > 0.65;
+    }
+
+    public void setTiltPosition(double target) {
+        target = (target > Constants.Launcher.tiltMaxPosition)? Constants.Launcher.tiltMaxPosition : target;
+        target = (target < Constants.Launcher.tiltMinPosition)? Constants.Launcher.tiltMinPosition : target;
+        tiltPositionControl.Position = target;
+        Hardware.launcherTiltMotor.setControl(tiltPositionControl);
+    }
+
+    public boolean tiltFinished() {
+        return Math.abs(tiltPositionControl.Position - tiltPositionSignal.getValue()) < Constants.Launcher.tiltTolerance;
     }
 
     void velocityParametersUpdated() {
@@ -95,37 +131,29 @@ public class TwoSidedLauncher implements IPeriodicTask {
     }
 
     public void onStart(RunContext ctx) {
-        leftStage2VelocitySignal = Hardware.leftLauncherStage2.getVelocity();
-        rightStage2VelocitySignal = Hardware.rightLauncherStage2.getVelocity();
 
-        leftStage2VelocitySignal.setUpdateFrequency(66);
-        rightStage2VelocitySignal.setUpdateFrequency(66);
 
         stage1Control = new VoltageOut(Constants.Launcher.stage1Voltage);
-        stage1VelocityControl= new VelocityVoltage(Constants.Launcher.stage1Velocity);
+        
 
-        leftStage2Control = new VelocityVoltage(0);
-        rightStage2Control = new VelocityVoltage(0);
+        leftStage2Control.Velocity = 0;
+        rightStage2Control.Velocity = 0;
 
-        leftStage2Control.UpdateFreqHz = 66;
-        rightStage2Control.UpdateFreqHz = 66;
-
-        linearVelocity = new Parameter<Double>(Constants.Launcher.defaultVelocity);
-        spinVelocity = new Parameter<Double>(Constants.Launcher.defaultSpinVelocity);
+        leftStage2Control.UpdateFreqHz = 200;
+        rightStage2Control.UpdateFreqHz = 200;
 
         velocityParametersUpdated();
 
-        linearVelocity.onValueUpdated = value -> velocityParametersUpdated();
-        spinVelocity.onValueUpdated = value -> velocityParametersUpdated();
+        shotTimer = new Timer();
 
         stopLauncher();
 
-        shotTimer = new Timer();
+        
         shotTimer.stop();
         shotTimer.reset();
 
         tiltPositionControl = new PositionVoltage(Constants.Launcher.tiltDefaultPosition);
-        tiltPositionControl.UpdateFreqHz = 66;
+        tiltPositionControl.UpdateFreqHz = 200;
         tiltPositionSignal = Hardware.launcherTiltMotor.getPosition();
         Hardware.launcherTiltMotor.setControl(tiltPositionControl);
         tiltPositionTarget = Constants.Launcher.tiltDefaultPosition;
@@ -135,12 +163,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
     public void onLoop(RunContext ctx) {
         BaseStatusSignal.refreshAll(leftStage2VelocitySignal, rightStage2VelocitySignal, tiltPositionSignal);
 
-        if(Hardware.operatorStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
-            launchNote();
-        } else if (Hardware.operatorStick.getRawButtonReleased(Constants.OperatorControls.launcherButton)) {
-            stopLauncher();
-        }
-
         Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
 
         if(stage2Ready() && !stage1Active && stage2Active) {
@@ -148,22 +170,9 @@ public class TwoSidedLauncher implements IPeriodicTask {
             Subsystems.intake.feedLauncher();
             shotTimer.reset();
             shotTimer.start();
-            Hardware.leftLauncherStage1.setControl(stage1Control);
-            Hardware.rightLauncherStage1.setControl(stage1Control);
+            //Hardware.leftLauncherStage1.setControl(stage1Control);
+            //Hardware.rightLauncherStage1.setControl(stage1Control);
         }
-
-        /*if(Hardware.driverStick.getRawButtonPressed(1)) {
-            Hardware.launcherTiltMotor.setControl(new VoltageOut(0.2));
-        } else if (Hardware.driverStick.getRawButtonPressed(4)) {
-            Hardware.launcherTiltMotor.setControl(new VoltageOut(-0.2));
-        }
-
-        if(
-            Hardware.driverStick.getRawButtonReleased(1) ||
-            Hardware.driverStick.getRawButtonReleased(4)
-        ) {
-            Hardware.launcherTiltMotor.setControl(new StaticBrake());
-        }*/
 
         double tiltDeltaT = (System.nanoTime() - lastTiltTargetTS)/1000000000.0;
 
@@ -179,31 +188,31 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
         tiltPositionTarget += toMove;
 
-        tiltPositionTarget = (tiltPositionTarget > Constants.Launcher.tiltMaxPosition)? Constants.Launcher.tiltMaxPosition : tiltPositionTarget;
-        tiltPositionTarget = (tiltPositionTarget < Constants.Launcher.tiltMinPosition)? Constants.Launcher.tiltMinPosition : tiltPositionTarget;
-
         lastTiltTargetTS = System.nanoTime();
 
         Subsystems.telemetry.pushDouble("launcher.tiltPositionTarget", tiltPositionTarget);
 
-        if(Hardware.driverStick.getRawButtonPressed(1)) {
-            tiltPositionTarget = 0;
-        } else if (Hardware.driverStick.getRawButtonPressed(4)) {
-            tiltPositionTarget = 0.0874;
-        }
+        
 
-        tiltPositionControl.Position = tiltPositionTarget;
-        Hardware.launcherTiltMotor.setControl(tiltPositionControl);
+        
+        //Hardware.launcherTiltMotor.setControl(tiltPositionControl);
 
         //note exit counter is connected to a prox sensor at the end of the shooter
         //exit counter will reach 2 once a note has fully cleared the sensor(2 rising edges on the signal)
+    
         Subsystems.telemetry.pushDouble("launcher.noteExitCounter", Hardware.noteExitCounter.get());
     
         Subsystems.telemetry.pushDouble("launcher.leftStage2Velocity", leftStage2VelocitySignal.getValue());
         Subsystems.telemetry.pushDouble("launcher.rightStage2Velocity", rightStage2VelocitySignal.getValue());
         Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
+        Subsystems.telemetry.pushBoolean("launcher.stage1Ready", stage1Active);
         Subsystems.telemetry.pushDouble("launcher.tilt.position", tiltPositionSignal.getValue());
         Subsystems.telemetry.pushDouble("launcher.applied", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushBoolean("launcher.tilt.finished", tiltFinished());
+
+    }
+
+    public void publishTelemetry() {
     }
 
     public void onStop() {

@@ -13,7 +13,7 @@ public class Robot extends TimedRobot{
     Timer loopTimer;
 
     public Robot() {
-        super(0.015);
+        super(0.005);
     }
     
     @Override
@@ -21,10 +21,15 @@ public class Robot extends TimedRobot{
         Hardware.configureHardware();
         Subsystems.telemetry.openSession("QSN", 1);
         
-        Schedulers.idleScheduler.clear();
+        //Schedulers.idleScheduler.clear();
         for(IPeriodicTask task : Tasks.idleTasks) {
-            Schedulers.idleScheduler.add(RunContext.disabled, task);
+            Schedulers.idleScheduler.add(task);
         }
+
+        for(IPeriodicTask task: Tasks.telemetryTasks) {
+            Schedulers.teleScheduler.add(task);
+        }
+
         loopTimer = new Timer();
         loopTimer.reset();
         loopTimer.start();
@@ -33,42 +38,43 @@ public class Robot extends TimedRobot{
     @Override
     protected void loopFunc() {
         Subsystems.telemetry.openFrame();
-        Subsystems.telemetry.pushDouble("robot.looptime", loopTimer.get());
         loopTimer.restart();
         super.loopFunc();
+        Subsystems.telemetry.pushDouble("robot.looptime", loopTimer.get());
         Subsystems.telemetry.closeFrame();
         
     }
 
     @Override
     public void robotPeriodic() {
-        Schedulers.idleScheduler.process(RunContext.disabled);
+        Schedulers.teleScheduler.run();
+        Schedulers.idleScheduler.run();
     }
 
     @Override
     public void teleopInit() {
-        Schedulers.teleopScheduler.clear();
+        //Schedulers.teleopScheduler.clear();
         for (IPeriodicTask task : Tasks.teleopTasks) {
-            Schedulers.teleopScheduler.add(RunContext.teleoperated, task);
+            Schedulers.teleopScheduler.add(task);
         }
     }
 
     @Override
     public void teleopPeriodic() {
-        Schedulers.teleopScheduler.process(RunContext.teleoperated);
+        Schedulers.teleopScheduler.run();
     }
 
     @Override
     public void autonomousInit() {
-        Schedulers.autoScheduler.clear();
+        //Schedulers.autoScheduler.clear();
         for (IPeriodicTask task : Tasks.autonomousTasks) {
-            Schedulers.autoScheduler.add(RunContext.autonomous, task);
+            Schedulers.autoScheduler.add(task);
         }
     }
 
     @Override
     public void autonomousPeriodic() {
-        Schedulers.autoScheduler.process(RunContext.autonomous);
+        Schedulers.autoScheduler.run();
     }
     
     @Override
