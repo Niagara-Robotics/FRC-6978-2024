@@ -17,10 +17,11 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.SPI.Port;
 
 public class Hardware {
     //Gyro
-    public static AHRS navX = new AHRS();
+    public static AHRS navX = new AHRS(Port.kMXP, (byte)200);
 
     //Drive Motors
     public static TalonFX leftDriveLeader = new TalonFX(1, "rio");
