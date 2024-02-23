@@ -136,6 +136,7 @@ public class DriverInput implements IPeriodicTask {
         tiltHandle.takeControl(false);
 
         if(Hardware.driverStick.getRawButtonPressed(1)) {
+            tiltHandle.takeControl(false);
             tiltHandle.set(0.0);
         } else if (Hardware.driverStick.getRawButtonPressed(4)) {
             tiltHandle.set(0.023);
