@@ -65,7 +65,7 @@ public class Tracking implements IPeriodicTask {
     }
 
     void updateOdometry() {
-        Pose2d pose = odometry.update(
+        odometry.update(
             getFieldRelativeRotation(),
             leftPosition.getValue() * Constants.Drive.rotorToMeters, 
             rightPosition.getValue() * Constants.Drive.rotorToMeters
