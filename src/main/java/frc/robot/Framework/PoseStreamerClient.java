@@ -4,10 +4,8 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.io.*;
 
@@ -84,8 +82,9 @@ public class PoseStreamerClient extends Thread {
 
         output.writeByte(streamRequest.pose_class);
         output.writeByte(streamRequest.object_id);
-        System.out.println("PoseStreamer: sent stream request");
+        output.flush();
         streamRequest.send_ts = System.nanoTime();
+        System.out.println("PoseStreamer: sent stream request");
     }
 
     void readStreamData() throws IOException {
@@ -123,6 +122,10 @@ public class PoseStreamerClient extends Thread {
         System.out.println("streamreq type" + request_type);
 
         if(request_type != 16) return;
+        if(status_code != 0) {
+            System.out.println("PoseStreamer: server returned response " +  status_code + " to stream request");
+            return;
+        }
         for (StreamRequest streamRequest : wantedPoses) {
             if(request_id == streamRequest.id) {
                 System.out.println("PoseStreamer: request response received");
