@@ -74,10 +74,10 @@ public class Constants {
         3220: 100, 0.023
         */
         public static HashMap<Double, Double> velocityMap = new HashMap<Double,Double>() { {
-            put(1370.0, 90.0);
-            put(1930.0, 90.0);
-            put(2280.0, 90.0);
-            put(2740.0, 90.0);
+            put(1370.0, 60.0);
+            put(1930.0, 70.0);
+            put(2280.0, 80.0);
+            put(2740.0, 80.0);
             put(3220.0, 100.0);
         }};
 
@@ -86,7 +86,8 @@ public class Constants {
             put(1930.0, 0.13);
             put(2280.0, 0.09);
             put(2740.0, 0.06);
-            put(3220.0, 0.023);
+            put(3220.0, 0.021);
+            put(3600.0, 0.0);
         }};
     }
 
