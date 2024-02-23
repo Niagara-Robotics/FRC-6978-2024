@@ -1,7 +1,6 @@
 package frc.robot.Platform;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class Constants {
     public static class Drive {
@@ -14,7 +13,6 @@ public class Constants {
         public static double kVleft = 0.1085;
         public static double kSleft = 0.08;
 
-        //TODO: update wheelRotorRatio
         public static double rotorToMeters = 0.039012;
         public static double trackWidth = 1.5; //meters
 
@@ -46,16 +44,16 @@ public class Constants {
         public static double right_kV = 7.04 / 65;
         public static double kS = 0.15;
 
-        public static double tiltRotorToMechanismRatio = 50;
+        public static double tiltRotorToMechanismRatio = 50 / 2*Math.PI;
         //both of these need to be POSITIVE!!
-        public static double tiltMaxOutputUp = 1.3;
+        public static double tiltMaxOutputUp = 1.5;
         public static double tiltMaxOutputDown = 0.6;
-        public static double tiltKp = 80;
-        public static double tiltKg = 0.25;
+        public static double tiltKp = 12.7; //TODO: estimate for appropriate kP with new sensor ratio
+        public static double tiltKg = 0.36; //TODO: determine appropriate kG for cosine approximation
 
         public static double tiltDefaultPosition = 0;
 
-        public static double tiltMaxPosition = 0.195;
+        public static double tiltMaxPosition = 1.225; //0.195rot TODO: determine max tilt position in radians
         public static double tiltMinPosition = 0;
 
         public static double tiltTolerance = 0.0055;
@@ -81,6 +79,7 @@ public class Constants {
             put(3220.0, 100.0);
         }};
 
+        //TODO: remap tilt position in radians
         public static HashMap<Double, Double> tiltMap = new HashMap<Double,Double>() { {
             put(1370.0, 0.19);
             put(1930.0, 0.13);

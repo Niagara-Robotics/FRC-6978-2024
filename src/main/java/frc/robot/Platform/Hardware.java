@@ -4,11 +4,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.kauailabs.navx.frc.AHRS;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.Compressor;
@@ -112,6 +111,7 @@ public class Hardware {
         launcherTiltConfiguration.Voltage.PeakReverseVoltage = -Constants.Launcher.tiltMaxOutputDown;
         launcherTiltConfiguration.Slot0.kP = Constants.Launcher.tiltKp;
         launcherTiltConfiguration.Slot0.kG = Constants.Launcher.tiltKg;
+        launcherTiltConfiguration.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
         launcherTiltConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
         launcherTiltMotor.getConfigurator().apply(launcherTiltConfiguration);
