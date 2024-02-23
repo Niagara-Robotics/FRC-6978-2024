@@ -7,7 +7,6 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 
@@ -74,8 +73,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
         Hardware.leftLauncherStage1.setControl(leftStage2Control);
         Hardware.rightLauncherStage1.setControl(rightStage2Control);
 
-        //Hardware.leftLauncherStage1.setControl(new CoastOut());
-        //Hardware.rightLauncherStage1.setControl(new CoastOut());
         stage2Active = true;
         shotTimer.stop();
         shotTimer.reset();
@@ -102,7 +99,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
     }
 
     public boolean finished() {
-        return shotTimer.get() > 0.65;
+        return shotTimer.get() > 0.35;
     }
 
     public void setTiltPosition(double target) {
@@ -168,10 +165,11 @@ public class TwoSidedLauncher implements IPeriodicTask {
         if(stage2Ready() && !stage1Active && stage2Active) {
             stage1Active = true;
             Subsystems.intake.feedLauncher();
+        }
+
+        if(stage1Active && stage2Active && !Subsystems.intake.getIndexSensor() && shotTimer.get() ==0) {
             shotTimer.reset();
             shotTimer.start();
-            //Hardware.leftLauncherStage1.setControl(stage1Control);
-            //Hardware.rightLauncherStage1.setControl(stage1Control);
         }
 
         double tiltDeltaT = (System.nanoTime() - lastTiltTargetTS)/1000000000.0;
@@ -192,11 +190,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
         Subsystems.telemetry.pushDouble("launcher.tiltPositionTarget", tiltPositionTarget);
 
-        
-
-        
-        //Hardware.launcherTiltMotor.setControl(tiltPositionControl);
-
         //note exit counter is connected to a prox sensor at the end of the shooter
         //exit counter will reach 2 once a note has fully cleared the sensor(2 rising edges on the signal)
     
@@ -209,7 +202,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
         Subsystems.telemetry.pushDouble("launcher.tilt.position", tiltPositionSignal.getValue());
         Subsystems.telemetry.pushDouble("launcher.applied", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
         Subsystems.telemetry.pushBoolean("launcher.tilt.finished", tiltFinished());
-
     }
 
     public void publishTelemetry() {
