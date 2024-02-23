@@ -41,7 +41,7 @@ public class Hardware {
     public static TalonSRX liftMotor = new TalonSRX(11);
     public static TalonSRX secondaryLiftMotor = new TalonSRX(12);
 
-    public static CANSparkMax intakeIndexerRoller = new CANSparkMax(40, MotorType.kBrushless);
+    public static TalonFX intakeIndexerRoller = new TalonFX(40);
 
     //Pneumatics
     public static Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
@@ -122,8 +122,16 @@ public class Hardware {
 
         kinematics = new DifferentialDriveKinematics(Constants.Drive.trackWidth);
 
+        TalonFXConfiguration intakeIndexerRollerConfig = new TalonFXConfiguration();
+        intakeIndexerRollerConfig.Slot0.kP = Constants.Intake.indexer_kP;
+        intakeIndexerRollerConfig.Slot0.kS = Constants.Intake.indexer_kS;
+        intakeIndexerRollerConfig.Slot0.kV = Constants.Intake.indexer_kV;
+        intakeIndexerRollerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        intakeIndexerRollerConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        intakeIndexerRoller.getConfigurator().apply(intakeIndexerRollerConfig);
+
         intakeFloorRoller.setInverted(true);
-        intakeIndexerRoller.setControlFramePeriodMs(5);
 
         noteExitCounter.setUpSource(2);
         noteExitCounter.setUpSourceEdge(false, true);

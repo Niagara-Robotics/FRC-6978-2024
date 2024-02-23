@@ -92,8 +92,13 @@ public class Constants {
 
     public static class Intake {
         public static double floorRollerPower = 0.8;
-        public static double indexRollerPower = 0.35;
-        public static double indexRollerFeedLauncherPower = 1;
+        public static double indexRollerVelocity = 5.5;
+
+        public static double indexer_kV = 7.04 / 63;
+        public static double indexer_kP = 0.45;
+        public static double indexer_kS = 0.08;
+
+        public static double indexRollerFeedLauncherPower = 10;
     }
 
     public static class Lift {

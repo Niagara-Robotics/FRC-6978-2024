@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.RunContext;
@@ -38,8 +41,18 @@ public class Intake implements IPeriodicTask{
     IntakeState currentState;
     IntakeState previousState;
 
+    VelocityVoltage indexRollerVelocityControl;
+    VoltageOut indexRollerVoltageControl;
+    NeutralOut indexRollerNeutralControl;
+
     public Intake() {
         currentState = new IntakeState(false, false);
+        indexRollerVelocityControl = new VelocityVoltage(Constants.Intake.indexRollerVelocity);
+        indexRollerVelocityControl.UpdateFreqHz = 200;
+
+        indexRollerVoltageControl = new VoltageOut(Constants.Intake.indexRollerFeedLauncherPower);
+
+        indexRollerNeutralControl = new NeutralOut();
     }
 
     //Intake stops itself once a note is detected inside
@@ -48,8 +61,9 @@ public class Intake implements IPeriodicTask{
         if(currentState.indexSensor || hasNote()) return false;
 
         Hardware.intakeFloorRoller.set(ControlMode.PercentOutput, Constants.Intake.floorRollerPower);
-        Hardware.intakeIndexerRoller.set(Constants.Intake.indexRollerPower);
     
+        Hardware.intakeIndexerRoller.setControl(indexRollerVelocityControl);
+
         currentState.floorRoller = true;
         currentState.indexRoller = true;
         Subsystems.telemetry.pushEvent("intake.began");
@@ -61,7 +75,7 @@ public class Intake implements IPeriodicTask{
         if(currentState.active) return false;
         currentState.indexRoller = true;
         currentState.active = true;
-        Hardware.intakeIndexerRoller.set(Constants.Intake.indexRollerFeedLauncherPower);
+        Hardware.intakeIndexerRoller.setControl(indexRollerVoltageControl);
         return true;
     }
 
@@ -73,7 +87,8 @@ public class Intake implements IPeriodicTask{
 
     public void idleIntake() {
         Hardware.intakeFloorRoller.set(ControlMode.Disabled, 0);
-        Hardware.intakeIndexerRoller.set(0);
+        Hardware.intakeIndexerRoller.setControl(indexRollerNeutralControl);
+
         currentState.floorRoller = false;
         currentState.indexRoller = false;
         currentState.active = false;
@@ -109,6 +124,10 @@ public class Intake implements IPeriodicTask{
         currentState.indexSensor = !Hardware.indexSensor.get();
     }
 
+    boolean getIndexSensor() {
+        return currentState.indexSensor;
+    }
+
     public List<RunContext> getAllowedRunContexts() { 
         return new ArrayList<RunContext>(){{
             add(RunContext.disabled);
@@ -119,7 +138,6 @@ public class Intake implements IPeriodicTask{
 
     public void onStart(RunContext ctx) {
         Hardware.intakeFloorRoller.set(ControlMode.Disabled, 0);
-        Hardware.intakeIndexerRoller.set(0);
         evaluateSensors();
         currentState.hasNote = false;
         if (currentState.indexSensor) {
@@ -127,6 +145,7 @@ public class Intake implements IPeriodicTask{
             currentState.hasNote = true;
             Subsystems.telemetry.pushEvent("intake.assumedNotePresent");
         }
+        Hardware.intakeIndexerRoller.setControl(indexRollerNeutralControl);
     }
 
     public void onLoop(RunContext ctx) {
@@ -147,7 +166,8 @@ public class Intake implements IPeriodicTask{
         Subsystems.telemetry.pushBoolean("intake.indexRoller", currentState.indexRoller);
         Subsystems.telemetry.pushBoolean("intake.hasNote", currentState.hasNote);
         Subsystems.telemetry.pushBoolean("intake.active", currentState.active);
-        Subsystems.telemetry.pushDouble("intake.indexRollerApplied", Hardware.intakeIndexerRoller.getAppliedOutput());
+        Subsystems.telemetry.pushDouble("intake.indexRollerVoltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushDouble("intake.indexRollerVelocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
         Subsystems.telemetry.pushDouble("intake.floorRollerVoltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
     }
 
