@@ -39,7 +39,6 @@ public class Intake implements IPeriodicTask{
     }
 
     IntakeState currentState;
-    IntakeState previousState;
 
     VelocityVoltage indexRollerVelocityControl;
     VoltageOut indexRollerVoltageControl;
@@ -116,10 +115,6 @@ public class Intake implements IPeriodicTask{
     }
 
     void evaluateSensors() {
-        //TODO: remove previousState, unneccesary and unused
-        if(currentState != null)
-        previousState = currentState;
-
         currentState.floorSensor = Hardware.floorSensor.get();
         currentState.indexSensor = !Hardware.indexSensor.get();
     }

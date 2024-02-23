@@ -20,7 +20,6 @@ import frc.robot.Platform.Hardware;
 import frc.robot.Platform.Subsystems;
 
 public class TwoSidedLauncher implements IPeriodicTask {
-    //TODO: calibrate launcher PIDs
     VelocityVoltage leftStage2Control;
     VelocityVoltage rightStage2Control;
     VelocityVoltage stage1VelocityControl;
@@ -114,7 +113,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
     }
 
     void velocityParametersUpdated() {
-        leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue()); //TODO: roto to meters
+        leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue());
         rightStage2Control.Velocity = (linearVelocity.getValue() - spinVelocity.getValue());
         Subsystems.telemetry.pushDouble("launcher.linearVelocity", linearVelocity.getValue());
         Subsystems.telemetry.pushDouble("launcher.spinVelocity", spinVelocity.getValue());
