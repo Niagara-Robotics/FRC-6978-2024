@@ -111,7 +111,7 @@ public class Tracking implements IPeriodicTask {
             for(int i=0; i<values.size(); i++) {
                 Subsystems.telemetry.pushDouble("tracking.cameraPose" + i, values.get(i));
             }
-            robotX = -values.get(0);
+            robotX = values.get(0);
             robotY = values.get(1);
         });
 
@@ -122,6 +122,7 @@ public class Tracking implements IPeriodicTask {
             shotTargetX = values.get(0);
             shotTargetY = values.get(1);
         });
+        client.awaiting_clock_request = true;
     }
 
     public void publishTelemetry() {

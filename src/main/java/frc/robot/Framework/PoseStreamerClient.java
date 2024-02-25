@@ -20,6 +20,11 @@ public class PoseStreamerClient extends Thread {
 
     boolean connected = false;
 
+    long clock_request_ts;
+    long clock_offset;
+    long estimated_latency;
+    public boolean awaiting_clock_request = false;
+
     public class StreamRequest {
         StreamRequestStatus status;
         int pose_class;
@@ -69,6 +74,9 @@ public class PoseStreamerClient extends Thread {
     }
 
     void sendPacketHeader(int packetType, int headerLength) throws IOException {
+        output.writeByte(0x05);
+        output.writeByte(0xb3);
+        
         output.writeByte(packetType);
         output.writeByte(headerLength);
     }
@@ -85,6 +93,33 @@ public class PoseStreamerClient extends Thread {
         output.flush();
         streamRequest.send_ts = System.nanoTime();
         System.out.println("PoseStreamer: sent stream request");
+    }
+
+    void sendClockRequest() throws IOException {
+        sendPacketHeader(0x31, 0);
+        clock_request_ts = System.nanoTime();
+    }
+
+    void handleClockResponse() throws IOException {
+        long clock_response_ts = System.nanoTime();
+        
+        estimated_latency = (clock_response_ts - clock_request_ts);
+        System.out.println("Estimating one-way latency at " + (estimated_latency / 2000000.0) + "ms");
+
+        ByteBuffer buf = ByteBuffer.allocate(8);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+
+        buf.put(0, input.readNBytes(8));
+
+        long remote_time = buf.getLong();
+
+        long clock_offset = (remote_time - (clock_response_ts - (estimated_latency / 2)));
+        System.out.println("Set clock offset to " + clock_offset);
+
+        double remote_send_estimate = (clock_response_ts - (remote_time - clock_offset))/1000000.0;
+
+        System.out.println("Got time: " + remote_time);
+        System.out.println("Got estimate: " + remote_send_estimate);
     }
 
     void readStreamData() throws IOException {
@@ -130,6 +165,32 @@ public class PoseStreamerClient extends Thread {
             if(request_id == streamRequest.id) {
                 System.out.println("PoseStreamer: request response received");
                 streamRequest.status = StreamRequestStatus.accepted;
+            }
+        }
+    }
+
+    void parseIncoming() throws IOException {
+        if(input.available() >= 2){
+            int preamble1 = input.read();
+            if(preamble1 != 0x05) return;
+
+            int preamble2 = input.read();
+            if(preamble2 != 0xb3) return;
+
+            int packetType = input.read();
+            int headerLength = input.read();
+            switch (packetType) {
+                case 0x10:
+                    readStreamData();
+                    break;
+                case 0x02:
+                    readRequestResponse();
+                    break;
+                case 0x30:
+                    handleClockResponse();
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -196,24 +257,11 @@ public class PoseStreamerClient extends Thread {
 
             try {
                 if((System.nanoTime() - lastHeartBeat) > 500000000) {
-                    output.writeByte(0x03);
-                    output.writeByte(0);
+                    sendPacketHeader(0x03, 0);
                     lastHeartBeat = System.nanoTime();
                 }
 
-                if(input.available() >= 2){
-                    int packetType = input.read();
-                    int headerLength = input.read();
-                    switch (packetType) {
-                        case 0x10:
-                            readStreamData();
-                            break;
-                        case 0x02:
-                            readRequestResponse();
-                        default:
-                            break;
-                    }
-                }
+                parseIncoming();
 
                 for (StreamRequest streamRequest : wantedPoses) {
                     if(streamRequest.status == StreamRequestStatus.none) {
@@ -221,11 +269,15 @@ public class PoseStreamerClient extends Thread {
                         streamRequest.status = StreamRequestStatus.sent;
                     }
                     if(streamRequest.status == StreamRequestStatus.sent) {
-                        if((System.nanoTime() - streamRequest.send_ts) >500000000) {
+                        if((System.nanoTime() - streamRequest.send_ts) > 800000000) {
                             streamRequest.status = StreamRequestStatus.none;
                             System.out.println("PoseStreamer: Stream request timed out");
                         }
                     }
+                }
+                if(awaiting_clock_request) {
+                    sendClockRequest();
+                    awaiting_clock_request = false;
                 }
             } catch (IOException i) {
                 connected = false;
