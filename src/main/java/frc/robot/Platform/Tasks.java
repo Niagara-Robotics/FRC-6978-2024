@@ -27,6 +27,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.intake,
         (IPeriodicTask)Subsystems.auto,
         (IPeriodicTask)Subsystems.launcher,
+        (IPeriodicTask)Subsystems.autoShot,
     };
 
     public static IPeriodicTask[] idleTasks = {
