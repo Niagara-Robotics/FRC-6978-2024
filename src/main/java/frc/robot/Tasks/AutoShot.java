@@ -17,6 +17,8 @@ public class AutoShot implements IPeriodicTask {
     ParameterHandle<Double> launcherTiltHandle;
 
     private boolean waitingToLaunch;
+    private double redSpeakerX = 16579.34;
+    private double redSpeakerY = 5547.87;
 
     public AutoShot() {
         launcherLinearHandle = Subsystems.launcher.linearVelocity.getHandle("autoShot");
@@ -35,11 +37,11 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public boolean aligned() {
-        return Math.abs(Subsystems.tracking.shotTargetX - 320) < 40;
+        return Math.abs(Subsystems.tracking.shotTargetX - 320) < 120;
     }
 
     public double distance() {
-        return Math.sqrt(Math.pow(Math.abs(Subsystems.tracking.robotX), 2)+Math.pow(Math.abs(Subsystems.tracking.robotY), 2));
+        return Math.sqrt(Math.pow(Math.abs(redSpeakerX - Subsystems.tracking.robotX), 2)+Math.pow(Math.abs(redSpeakerY - Subsystems.tracking.robotY), 2));
     }
 
     public double linearInterpolate(HashMap<Double, Double> map, double target) {
@@ -100,9 +102,13 @@ public class AutoShot implements IPeriodicTask {
         waitingToLaunch = false;
     }
 
+    public boolean finished() {
+        return !waitingToLaunch;
+    }
+
     public void onLoop(RunContext ctx) {
         if(waitingToLaunch) {
-            setupLauncher(distance());
+            //setupLauncher(distance());
             if(aligned() && Subsystems.launcher.tiltFinished()) {
                 Subsystems.launcher.launchNote();
             } 
