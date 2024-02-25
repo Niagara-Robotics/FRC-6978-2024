@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.SPI;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.PIDController;
 import frc.robot.Framework.ParameterHandle;
@@ -62,7 +61,7 @@ public class DriverInput implements IPeriodicTask {
                 Subsystems.telemetry.pushDouble("autoAlign.output", alignmentController.process(Subsystems.tracking.shotTargetX - 300));
 
                 Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0, alignmentController.process(Subsystems.tracking.shotTargetX - 300)));
-        } else driveStickVelocity(x, y, 2, 2.2);
+        } else driveStickVelocity(x, y, 2, 3);
 
         //shoot button
         if(Hardware.driverStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
