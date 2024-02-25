@@ -204,6 +204,8 @@ public class TwoSidedLauncher implements IPeriodicTask {
     }
 
     public void publishTelemetry() {
+        Subsystems.telemetry.pushDouble("launcher.tilt.position", Hardware.launcherTiltMotor.getPosition().getValue());
+
     }
 
     public void onStop() {
