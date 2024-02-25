@@ -6,12 +6,12 @@ import frc.robot.Platform.Subsystems;
 public class ShootCommand extends Command {
     @Override
     public void initialize() {
-        Subsystems.launcher.launchNote();
+        Subsystems.autoShot.fullAutoLaunch();
     }
 
     @Override
     public boolean isFinished() {
-        return Subsystems.launcher.finished();
+        return Subsystems.autoShot.finished();
     }
 
     @Override
