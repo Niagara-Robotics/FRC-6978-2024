@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Framework.IPeriodicTask;
+import frc.robot.Framework.PIDController;
 import frc.robot.Framework.ParameterHandle;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Constants;
@@ -18,12 +22,19 @@ public class AutoShot implements IPeriodicTask {
 
     private boolean waitingToLaunch;
     private double redSpeakerX = 16579.34;
+    private double blueSpeakerX = 0.0;
+
+    private double speakerX = redSpeakerX;
     private double redSpeakerY = 5547.87;
+
+    PIDController alignmentController;
 
     public AutoShot() {
         launcherLinearHandle = Subsystems.launcher.linearVelocity.getHandle("autoShot");
         launcherCurveHandle = Subsystems.launcher.spinVelocity.getHandle("autoShot");
         launcherTiltHandle = Subsystems.launcher.tilt.getHandle("autoShot");
+
+        alignmentController = new PIDController(8.0, 0.0, 0.0);
 
         SmartDashboard.putNumber("autoShot_simDistance", 0);
     }
@@ -37,11 +48,22 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public boolean aligned() {
-        return Math.abs(Subsystems.tracking.shotTargetX - 320) < 120;
+        return Math.abs(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians() - angleToTarget()) < 0.1 && 
+        (System.nanoTime() - Subsystems.tracking.lastCameraCorrection) < 600000000;
     }
 
     public double distance() {
-        return Math.sqrt(Math.pow(Math.abs(redSpeakerX - Subsystems.tracking.robotX), 2)+Math.pow(Math.abs(redSpeakerY - Subsystems.tracking.robotY), 2));
+        return Math.sqrt(Math.pow(Math.abs(speakerX - (Subsystems.tracking.odometry.getPoseMeters().getX()*1000.0)), 2)+Math.pow(Math.abs(redSpeakerY - (Subsystems.tracking.odometry.getPoseMeters().getY()*1000.0)), 2)) *1.0;
+    }
+
+    public double angleToTarget() {
+        double dX = speakerX - (Subsystems.tracking.odometry.getPoseMeters().getX()*1000.0);
+        double dY = redSpeakerY - (Subsystems.tracking.odometry.getPoseMeters().getY()*1000.0);
+
+        double angle = Math.atan2(dY, dX);
+        if(angle < 0) angle = angle + Math.PI;
+        else if(angle > 0) angle = -(Math.PI - angle);
+        return angle;
     }
 
     public double linearInterpolate(HashMap<Double, Double> map, double target) {
@@ -89,6 +111,25 @@ public class AutoShot implements IPeriodicTask {
         launcherTiltHandle.set(Constants.Launcher.ampTiltPosition);
     }
 
+    public void setupTrapShot() {
+        launcherLinearHandle.takeControl(false);
+        launcherCurveHandle.takeControl(false);
+        launcherTiltHandle.takeControl(false);
+
+        launcherLinearHandle.set(Constants.Launcher.trapVelocity);
+        launcherCurveHandle.set(0.0);
+        launcherTiltHandle.set(Constants.Launcher.trapTiltPosition);
+    }
+
+    double closestAngleDelta(double targetRadians, double actualRadians) {
+        double delta = targetRadians - actualRadians;
+        Subsystems.telemetry.pushDouble("rawDelta", delta);
+        if(delta > Math.PI) delta = -(delta - Math.PI);
+        if(delta < -Math.PI) delta = (delta + Math.PI*2);
+        
+        return delta;
+    }
+
     public void fireWhenReady() {
         waitingToLaunch = true;
     }
@@ -96,6 +137,15 @@ public class AutoShot implements IPeriodicTask {
     public void fullAutoLaunch() {
         setupLauncher(distance());
         fireWhenReady();
+        alignmentController.init();
+        alignmentController.set(0.0);
+        alignmentController.setLimit(2.8);
+    }
+
+    public void cancelAutoLaunch() {
+        waitingToLaunch = false;
+        Subsystems.launcher.stopLauncher();
+        Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0, 0));
     }
 
     public void onStart(RunContext ctx) {
@@ -107,14 +157,29 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void onLoop(RunContext ctx) {
+
+        var alliance = DriverStation.getAlliance();
+        if(alliance.isPresent()) {
+            if(alliance.get() == Alliance.Red) {
+                speakerX = redSpeakerX;
+            } else {
+                speakerX = blueSpeakerX;
+            }
+        }
+
         if(waitingToLaunch) {
-            //setupLauncher(distance());
-            if(aligned() && Subsystems.launcher.tiltFinished()) {
+            setupLauncher(distance());
+            double delta = -closestAngleDelta(Subsystems.autoShot.angleToTarget(), Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians());
+            Subsystems.telemetry.pushDouble("autoAlign.delta", delta);
+            double output = alignmentController.process(delta);
+            Subsystems.telemetry.pushDouble("autoAlign.output", output);
+            Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0, output));
+            if(aligned() && Subsystems.launcher.tiltFinished() && Math.abs(output) < 0.2) {
                 Subsystems.launcher.launchNote();
             } 
             if(Subsystems.launcher.finished()) {
-                Subsystems.launcher.stopLauncher();
-                waitingToLaunch = false;
+                cancelAutoLaunch();
+                Subsystems.illumination.setStatic((byte)0, 0, 130, 0);
             }
         }
     }
@@ -123,6 +188,7 @@ public class AutoShot implements IPeriodicTask {
         Subsystems.telemetry.pushBoolean("autoShot.aligned", aligned());
         Subsystems.telemetry.pushDouble("autoShot.distance", distance());
         Subsystems.telemetry.pushDouble("autoShot_tiltVal", linearInterpolate(Constants.AutoShot.tiltMap, distance()));
+        Subsystems.telemetry.pushDouble("autoShot.angleToTarget", angleToTarget());
     }
 
     public void onStop() {
