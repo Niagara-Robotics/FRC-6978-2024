@@ -90,11 +90,14 @@ public class Hardware {
         leftDriveLeader.getConfigurator().apply(leftDriveConfiguration);
         rightDriveLeader.getConfigurator().apply(rightDriveConfiguration);
 
+        leftDriveLeader.setPosition(0);
+        rightDriveLeader.setPosition(0);
+
         TalonFXConfiguration launcherConfiguration = new TalonFXConfiguration();
         launcherConfiguration.Slot0.kP = Constants.Launcher.kP;
         launcherConfiguration.Slot0.kV = Constants.Launcher.left_kV;
         launcherConfiguration.Slot0.kS = Constants.Launcher.kS;
-
+        //75.8, 
         leftLauncherStage2.getConfigurator().apply(launcherConfiguration);
         leftLauncherStage1.getConfigurator().apply(launcherConfiguration);
         rightLauncherStage1.getConfigurator().apply(launcherConfiguration);
