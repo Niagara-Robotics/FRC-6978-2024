@@ -13,8 +13,10 @@ public class Constants {
         public static double kVleft = 0.1085;
         public static double kSleft = 0.08;
 
-        public static double rotorToMeters = 0.039012;
-        public static double trackWidth = 1.1; //meters
+        public static double rotorToMeters = 0.03931230284; //25.266 rotations per meter 
+        public static double trackWidth = 1.25; //meters
+
+        //6.231m 158.5
 
         public static double peakOutput = 1;
 
@@ -29,7 +31,7 @@ public class Constants {
         public static double rotorToMeters = 5;
         //60,12
         //default stage 2 velocity target(this is also parameterized)
-        public static double defaultVelocity = 100;
+        public static double defaultVelocity = 80;
         public static double ampVelocity = 20;
         public static double defaultSpinVelocity = 0;
 
@@ -40,25 +42,29 @@ public class Constants {
         public static double stage2Tolerance = 2;
 
         public static double kP = 0.3;
-        public static double left_kV = 7.04 / 63;
-        public static double right_kV = 7.04 / 65;
+        public static double left_kV = 7.04 / 62;
+        public static double right_kV = 7.04 / 64;
         public static double kS = 0.15;
 
         public static double tiltRotorToMechanismRatio = 50.0 / (2.0*Math.PI);
         //both of these need to be POSITIVE!!
-        public static double tiltMaxOutputUp = 1.5;
-        public static double tiltMaxOutputDown = 0.6;
+        public static double tiltMaxOutputUp = 2.5;
+        public static double tiltMaxOutputDown = 0.8;
         public static double tiltKp = 95; //TODO: estimate for appropriate kP with new sensor ratio
         public static double tiltKg = 0.313; //TODO: determine appropriate kG for cosine approximation
 
-        public static double tiltDefaultPosition = 0;
+        public static double tiltDefaultPosition = -0.1134464014;
 
-        public static double tiltMaxPosition = 1.16; //0.195rot TODO: determine max tilt position in radians
-        public static double tiltMinPosition = 0;
+        public static double tiltMaxPosition = 1.19; //0.195rot TODO: determine max tilt position in radians
+        public static double tiltMinPosition = -0.113446;
 
         public static double tiltTolerance = 0.0081;
 
         public static double ampTiltPosition = 0.9;
+
+        public static double trapTiltPosition = 1.1;
+
+        public static double trapVelocity = 55;
 
         
     }
@@ -87,12 +93,13 @@ public class Constants {
             put(2740.0, 0.35);
             put(3220.0, 0.021*2*Math.PI);
             put(3600.0, 0.0);
+            put(4000.0, -0.1);
         }};
     }
 
     public static class Intake {
-        public static double floorRollerPower = 0.8;
-        public static double indexRollerVelocity = 5.5;
+        public static double floorRollerPower = 0.55;
+        public static double indexRollerVelocity = 7.5;
 
         public static double indexer_kV = 7.04 / 63;
         public static double indexer_kP = 0.45;
@@ -115,7 +122,9 @@ public class Constants {
         public static int transferControlButton = 13;
 
         public static int autoAlignButton = 6;
+        public static int autoNoteButton = 10;
         public static int ampShotButton = 5;
+        public static int trapShotButton = 9;
 
         public static int tiltTakeover = 12;
     }
@@ -125,5 +134,8 @@ public class Constants {
 
         public static int climbUpButton = 1;
         public static int climbReleaseButton = 3;
+
+        public static int configureSubShotButton = 5;
+        public static int configurePodiumShotButton = 6;
     }
 }
