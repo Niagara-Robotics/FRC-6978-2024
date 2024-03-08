@@ -10,7 +10,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.driverInput,
         (IPeriodicTask)Subsystems.tracking,
         (IPeriodicTask)Subsystems.lift,
-        (IPeriodicTask)Subsystems.autoShot
+        (IPeriodicTask)Subsystems.autoShot,
     };
     
     public static IPeriodicTask[] teleopTasks = {
@@ -18,8 +18,9 @@ public class Tasks {
         (IPeriodicTask)Subsystems.intake,
         (IPeriodicTask)Subsystems.launcher,
         (IPeriodicTask)Subsystems.driverInput,
-        (IPeriodicTask)Subsystems.autoShot
-        //(IPeriodicTask)Subsystems.lift,
+        (IPeriodicTask)Subsystems.autoShot,
+        (IPeriodicTask)Subsystems.lift,
+        (IPeriodicTask)Subsystems.operatorInput,
     };
 
     public static IPeriodicTask[] autonomousTasks = {
