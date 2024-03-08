@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import frc.robot.Platform.Subsystems;
+
 import java.io.*;
 
 public class PoseStreamerClient extends Thread {
@@ -29,7 +32,7 @@ public class PoseStreamerClient extends Thread {
         StreamRequestStatus status;
         int pose_class;
         int object_id;
-        Consumer <List<Double>> callback;
+        Consumer <StreamFrame> callback;
         long send_ts;
         int id;
 
@@ -39,7 +42,7 @@ public class PoseStreamerClient extends Thread {
             status = StreamRequestStatus.none;
         }
 
-        public StreamRequest setCallback(Consumer <List<Double>> callback) {
+        public StreamRequest setCallback(Consumer <StreamFrame> callback) {
             this.callback = callback;
             return this;
         }
@@ -59,7 +62,7 @@ public class PoseStreamerClient extends Thread {
 
     int requestid;
 
-    long lastHeartBeat;
+    long lastHeartBeatSend, lastHeartBeatReceive;
 
     public PoseStreamerClient(String host, int port) {
         this.host = host;
@@ -67,7 +70,7 @@ public class PoseStreamerClient extends Thread {
         wantedPoses = new LinkedList<StreamRequest>();
     }
 
-    public void requestPose(int poseClass, int objectId, Consumer<List<Double>> poseCallback) {
+    public void requestPose(int poseClass, int objectId, Consumer<StreamFrame> poseCallback) {
         wantedPoses.add(new StreamRequest(poseClass, objectId).setCallback(poseCallback).setId(requestid));
         requestid++;
         if(requestid > 255) requestid = 0;
@@ -86,7 +89,7 @@ public class PoseStreamerClient extends Thread {
 
         output.writeByte(0x10); //request type: initiate stream
         output.writeByte(streamRequest.id); //request id
-        output.writeByte(2); //Request size
+        output.writeByte(0x02); //Request size
 
         output.writeByte(streamRequest.pose_class);
         output.writeByte(streamRequest.object_id);
@@ -98,11 +101,12 @@ public class PoseStreamerClient extends Thread {
     void sendClockRequest() throws IOException {
         sendPacketHeader(0x31, 0);
         clock_request_ts = System.nanoTime();
+        output.flush();
     }
 
     void handleClockResponse() throws IOException {
         long clock_response_ts = System.nanoTime();
-        
+        lastHeartBeatReceive = clock_response_ts;
         estimated_latency = (clock_response_ts - clock_request_ts);
         System.out.println("Estimating one-way latency at " + (estimated_latency / 2000000.0) + "ms");
 
@@ -113,7 +117,7 @@ public class PoseStreamerClient extends Thread {
 
         long remote_time = buf.getLong();
 
-        long clock_offset = (remote_time - (clock_response_ts - (estimated_latency / 2)));
+        clock_offset = (remote_time - (clock_response_ts - (estimated_latency / 2)));
         System.out.println("Set clock offset to " + clock_offset);
 
         double remote_send_estimate = (clock_response_ts - (remote_time - clock_offset))/1000000.0;
@@ -125,16 +129,23 @@ public class PoseStreamerClient extends Thread {
     void readStreamData() throws IOException {
         int received_pose_class = input.readByte();
         int received_object_id = input.readByte();
-        int num_doubles = input.readByte() / 8;
+        
+        StreamFrame frame = new StreamFrame();
 
-        List<Double> values = new ArrayList<Double>();
-
+        frame.values = new ArrayList<Double>();
+        
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.order(ByteOrder.LITTLE_ENDIAN);
+        
+        buf.put(0, input.readNBytes(8));
 
+        frame.timestamp = buf.getLong(0) - clock_offset;
+
+        int num_doubles = input.readUnsignedByte() / 8;
+        
         for(int i = 0; i<num_doubles; i++) {
             buf.put(0, input.readNBytes(8));
-            values.add(buf.getDouble(0));
+            frame.values.add(buf.getDouble(0));
         }
 
         for (StreamRequest streamRequest : wantedPoses) {
@@ -143,7 +154,7 @@ public class PoseStreamerClient extends Thread {
                 (streamRequest.object_id == received_object_id ||
                 streamRequest.object_id == 0)
             ) {
-                streamRequest.callback.accept(values);
+                streamRequest.callback.accept(frame);
             }
         }
     }
@@ -198,6 +209,7 @@ public class PoseStreamerClient extends Thread {
     public boolean connect() {
         try {
             m_socket = new Socket(host, port);
+            while(!m_socket.isConnected()) {}
             System.out.println("PoseStreamer: connected to server");
 
             input = new DataInputStream(m_socket.getInputStream());
@@ -216,8 +228,8 @@ public class PoseStreamerClient extends Thread {
             return false;
         }
 
-        lastHeartBeat = System.nanoTime();
-
+        lastHeartBeatSend = System.nanoTime();
+        lastHeartBeatReceive = lastHeartBeatSend;
         return true;
     }
 
@@ -240,25 +252,30 @@ public class PoseStreamerClient extends Thread {
     public void run() {
         requestid = 0;
         while(true) {
-            if(!connected || m_socket.isClosed()) {
-                requestid = 0;
-                close();
-                connected = connect();
-                if(!connected) {
-                    System.out.println("PoseStreamer: connection failed... trying again in 2s");
-                    try {
-                        sleep(2000);
-                    } catch(InterruptedException i) {
-                        return;
-                    }
-                    continue;
-                }
+            if((System.nanoTime() - lastHeartBeatReceive) > 1000000000) {
+                connected = false;
             }
-
+            Subsystems.telemetry.pushBoolean("PoseStreamer.connected", connected);
             try {
-                if((System.nanoTime() - lastHeartBeat) > 500000000) {
-                    sendPacketHeader(0x03, 0);
-                    lastHeartBeat = System.nanoTime();
+                if(!connected) {
+                    requestid = 0;
+                    close();
+                    connected = connect();
+                    if(!connected) {
+                        System.out.println("PoseStreamer: connection failed... trying again in 2s");
+                        try {
+                            sleep(2000);
+                        } catch(InterruptedException i) {
+                            return;
+                        }
+                        continue;
+                    }
+                }
+
+            
+                if((System.nanoTime() - lastHeartBeatSend) > 250000000) {
+                    sendClockRequest();
+                    lastHeartBeatSend = System.nanoTime();
                 }
 
                 parseIncoming();
@@ -269,7 +286,7 @@ public class PoseStreamerClient extends Thread {
                         streamRequest.status = StreamRequestStatus.sent;
                     }
                     if(streamRequest.status == StreamRequestStatus.sent) {
-                        if((System.nanoTime() - streamRequest.send_ts) > 800000000) {
+                        if((System.nanoTime() - streamRequest.send_ts) > 1000000000) {
                             streamRequest.status = StreamRequestStatus.none;
                             System.out.println("PoseStreamer: Stream request timed out");
                         }
@@ -279,7 +296,7 @@ public class PoseStreamerClient extends Thread {
                     sendClockRequest();
                     awaiting_clock_request = false;
                 }
-            } catch (IOException i) {
+            } catch (Exception i) {
                 connected = false;
                 System.out.println("disconnecting");
             }
