@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ctre.phoenix6.controls.CoastOut;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
@@ -36,7 +38,7 @@ public class DifferentialDrive implements IPeriodicTask{
 
     Parameter<Double> speedLimit;
 
-
+    RunContext lastContext;
     
     public DifferentialDrive() {
         speedLimit = new Parameter<Double>(3.0);
@@ -45,11 +47,16 @@ public class DifferentialDrive implements IPeriodicTask{
     public void onStart(RunContext context) {
         if(context == RunContext.teleoperated) {
             //useStick();
+        } else if(context == RunContext.autonomous) {
+            Hardware.leftDriveLeader.setNeutralMode(NeutralModeValue.Brake);
+            Hardware.rightDriveLeader.setNeutralMode(NeutralModeValue.Brake);
         }
+        lastContext = context;
     }
 
     public void onStop() {
-        coast();
+        if(lastContext == RunContext.autonomous) brake(); 
+        else coast();
     }
 
     public void onLoop(RunContext context) {
@@ -195,6 +202,14 @@ public class DifferentialDrive implements IPeriodicTask{
     public void coast() {
         Hardware.leftDriveLeader.setControl(new CoastOut());
         Hardware.rightDriveLeader.setControl(new CoastOut());
+        mode = DriveMode.none;
+    }
+
+    public void brake() {
+        Hardware.leftDriveLeader.setNeutralMode(NeutralModeValue.Brake);
+        Hardware.rightDriveLeader.setNeutralMode(NeutralModeValue.Brake);
+        Hardware.leftDriveLeader.setControl(new StaticBrake());
+        Hardware.rightDriveLeader.setControl(new StaticBrake());
         mode = DriveMode.none;
     }
 
