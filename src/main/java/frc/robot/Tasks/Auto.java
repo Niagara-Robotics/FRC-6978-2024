@@ -44,7 +44,7 @@ public class Auto implements IPeriodicTask {
 
                     var alliance = DriverStation.getAlliance();
                     if (alliance.isPresent()) {
-                        //return alliance.get() == DriverStation.Alliance.Red;
+                        return alliance.get() == DriverStation.Alliance.Blue;
                     }
                     return false;
                 },
@@ -63,7 +63,7 @@ public class Auto implements IPeriodicTask {
         LowerLauncherCommand lowerLauncherCommand = new LowerLauncherCommand();
         NamedCommands.registerCommand("LowerLauncher", lowerLauncherCommand);
 
-        testAuto = AutoBuilder.buildAuto("Red 2");
+        testAuto = AutoBuilder.buildAuto("Red 4");
     }
     
     public List<RunContext> getAllowedRunContexts() { 
