@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 15.404280026152648,
-      "y": 6.532756658105908
+      "x": 15.517385812780322,
+      "y": 4.400571712183863
     },
-    "rotation": 139.37853104867563
+    "rotation": -136.60658938226902
   },
   "command": {
     "type": "sequential",
@@ -18,19 +18,19 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "LowerLauncher"
-          }
-        },
-        {
           "type": "parallel",
           "data": {
             "commands": [
               {
+                "type": "named",
+                "data": {
+                  "name": "LowerLauncher"
+                }
+              },
+              {
                 "type": "path",
                 "data": {
-                  "pathName": "redRightNotep1"
+                  "pathName": "FarLeftNote"
                 }
               },
               {
@@ -40,6 +40,12 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "FarLeftNoteReturn"
           }
         },
         {
@@ -55,7 +61,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "redRightNotep2"
+                  "pathName": "SecondLeftNote"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "LowerLauncher"
                 }
               },
               {
