@@ -66,6 +66,8 @@ public class Intake implements IPeriodicTask{
         currentState.floorRoller = true;
         currentState.indexRoller = true;
         Subsystems.telemetry.pushEvent("intake.began");
+        Subsystems.illumination.setStatic((byte)0, 120, 35, 0);
+        Subsystems.illumination.setStatic((byte)1, 120, 35, 0);
         return true;
     }
 
@@ -97,6 +99,8 @@ public class Intake implements IPeriodicTask{
     public boolean intakeFinished() {
         if(currentState.hasNote) return true;
         else if(currentState.indexSensor) {
+            Subsystems.illumination.setStatic((byte)0, 0, 120, 0);
+            Subsystems.illumination.setStatic((byte)1, 0, 120, 0);
             Subsystems.telemetry.pushEvent("intake.finished");
             idleIntake();
             currentState.hasNote = true;
@@ -147,11 +151,7 @@ public class Intake implements IPeriodicTask{
         evaluateSensors();
 
 
-        if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.intakeButton)) {
-            intakeNote();
-        } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.intakeButton)) {
-            //idleIntake();
-        }
+        
         intakeFinished();
     }
 
@@ -160,7 +160,7 @@ public class Intake implements IPeriodicTask{
         Subsystems.telemetry.pushBoolean("intake.floorRoller", currentState.floorRoller);
         Subsystems.telemetry.pushBoolean("intake.indexRoller", currentState.indexRoller);
         Subsystems.telemetry.pushBoolean("intake.hasNote", currentState.hasNote);
-        Subsystems.telemetry.pushBoolean("intake.active", currentState.active);
+        Subsystems.telemetry.pushBoolean("intake.finished", intakeFinished());
         Subsystems.telemetry.pushDouble("intake.indexRollerVoltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
         Subsystems.telemetry.pushDouble("intake.indexRollerVelocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
         Subsystems.telemetry.pushDouble("intake.floorRollerVoltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());

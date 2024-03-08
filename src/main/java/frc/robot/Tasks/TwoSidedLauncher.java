@@ -72,6 +72,9 @@ public class TwoSidedLauncher implements IPeriodicTask {
         Hardware.leftLauncherStage1.setControl(leftStage2Control);
         Hardware.rightLauncherStage1.setControl(rightStage2Control);
 
+        Subsystems.illumination.setStatic((byte)0, 0, 65, 65);
+        Subsystems.illumination.setBreathing((byte)1, (short)2000, 0, 65, 65);
+
         stage2Active = true;
         shotTimer.stop();
         shotTimer.reset();
@@ -169,6 +172,8 @@ public class TwoSidedLauncher implements IPeriodicTask {
         if(stage1Active && stage2Active && !Subsystems.intake.getIndexSensor() && shotTimer.get() ==0) {
             shotTimer.reset();
             shotTimer.start();
+            Subsystems.illumination.setStatic((byte)0, 80, 0, 80);
+            Subsystems.illumination.setStatic((byte)1, 80, 0, 80);
         }
 
         double tiltDeltaT = (System.nanoTime() - lastTiltTargetTS)/1000000000.0;
