@@ -63,6 +63,12 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
         tilt = new Parameter<Double>(Constants.Launcher.tiltDefaultPosition);
         tilt.onValueUpdated = position -> setTiltPosition(position);
+
+        tiltPositionSignal = Hardware.launcherTiltMotor.getPosition();
+        tiltPositionSignal.setUpdateFrequency(200);
+
+        tiltPositionControl = new PositionVoltage(Constants.Launcher.tiltDefaultPosition);
+        tiltPositionControl.UpdateFreqHz = 200;
     }
 
     public void launchNote() {
@@ -118,8 +124,8 @@ public class TwoSidedLauncher implements IPeriodicTask {
     void velocityParametersUpdated() {
         leftStage2Control.Velocity = (linearVelocity.getValue() + spinVelocity.getValue());
         rightStage2Control.Velocity = (linearVelocity.getValue() - spinVelocity.getValue());
-        Subsystems.telemetry.pushDouble("launcher.linearVelocity", linearVelocity.getValue());
-        Subsystems.telemetry.pushDouble("launcher.spinVelocity", spinVelocity.getValue());
+        Subsystems.telemetry.pushDouble("launcher_linearVelocity", linearVelocity.getValue());
+        Subsystems.telemetry.pushDouble("launcher_spinVelocity", spinVelocity.getValue());
     }
 
     public List<RunContext> getAllowedRunContexts() { 
@@ -153,7 +159,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
         tiltPositionControl = new PositionVoltage(Constants.Launcher.tiltDefaultPosition);
         tiltPositionControl.UpdateFreqHz = 200;
-        tiltPositionSignal = Hardware.launcherTiltMotor.getPosition();
         Hardware.launcherTiltMotor.setControl(tiltPositionControl);
         tiltPositionTarget = Constants.Launcher.tiltDefaultPosition;
         lastTiltTargetTS = System.nanoTime();
@@ -161,8 +166,6 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
     public void onLoop(RunContext ctx) {
         BaseStatusSignal.refreshAll(leftStage2VelocitySignal, rightStage2VelocitySignal, tiltPositionSignal);
-
-        Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
 
         if(stage2Ready() && !stage1Active && stage2Active) {
             stage1Active = true;
@@ -192,25 +195,26 @@ public class TwoSidedLauncher implements IPeriodicTask {
 
         lastTiltTargetTS = System.nanoTime();
 
-        Subsystems.telemetry.pushDouble("launcher.tiltPositionTarget", tiltPositionTarget);
+        //Subsystems.telemetry.pushDouble("launcher.tiltPositionTarget", tiltPositionTarget);
 
         //note exit counter is connected to a prox sensor at the end of the shooter
         //exit counter will reach 2 once a note has fully cleared the sensor(2 rising edges on the signal)
     
-        Subsystems.telemetry.pushDouble("launcher.noteExitCounter", Hardware.noteExitCounter.get());
-    
-        Subsystems.telemetry.pushDouble("launcher.leftStage2Velocity", leftStage2VelocitySignal.getValue());
-        Subsystems.telemetry.pushDouble("launcher.rightStage2Velocity", rightStage2VelocitySignal.getValue());
-        Subsystems.telemetry.pushBoolean("launcher.stage2Ready", stage2Ready());
-        Subsystems.telemetry.pushBoolean("launcher.stage1Ready", stage1Active);
-        Subsystems.telemetry.pushDouble("launcher.tilt.position", tiltPositionSignal.getValue());
-        Subsystems.telemetry.pushDouble("launcher.applied", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
-        Subsystems.telemetry.pushBoolean("launcher.tilt.finished", tiltFinished());
+        
     }
 
     public void publishTelemetry() {
-        Subsystems.telemetry.pushDouble("launcher.tilt.position", Hardware.launcherTiltMotor.getPosition().getValue());
+        //Subsystems.telemetry.pushDouble("launcher.tilt.position", Hardware.launcherTiltMotor.getPosition().getValue());
 
+        //Subsystems.telemetry.pushDouble("launcher_noteExitCounter", Hardware.noteExitCounter.get());
+    
+        Subsystems.telemetry.pushDouble("launcher_stage2_leftVelocity", leftStage2VelocitySignal.getValue());
+        Subsystems.telemetry.pushDouble("launcher_stage2_rightvelocity", rightStage2VelocitySignal.getValue());
+        Subsystems.telemetry.pushBoolean("launcher_stage2_ready", stage2Ready());
+        Subsystems.telemetry.pushBoolean("launcher_stage1_ready", stage1Active);
+        Subsystems.telemetry.pushDouble("launcher_tilt_position", tiltPositionSignal.getValue());
+        Subsystems.telemetry.pushDouble("launcher_applied", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushBoolean("launcher_tilt_finished", tiltFinished());
     }
 
     public void onStop() {

@@ -7,7 +7,10 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.AutoCommands.IntakeCommand;
@@ -15,6 +18,7 @@ import frc.robot.AutoCommands.LowerLauncherCommand;
 import frc.robot.AutoCommands.RaiseLauncherCommand;
 import frc.robot.AutoCommands.ShootCommand;
 import frc.robot.Framework.IPeriodicTask;
+import frc.robot.Framework.ParameterHandle;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Subsystems;
 
@@ -24,16 +28,22 @@ public class Auto implements IPeriodicTask {
 
     boolean isFinished = false;
 
+    SendableChooser<Command> autoChooser;
+
+    ParameterHandle<ChassisSpeeds> driveHandle;
+
     public Auto() {
         Subsystem dummySubsytem = new Subsystem() {
             
         };
 
+        driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("autonomous");
+
         AutoBuilder.configureRamsete(
                 () -> Subsystems.tracking.getPose(), // Robot pose supplier
                 pose -> Subsystems.tracking.setOdometryPose(pose), // Method to reset odometry (will be called if your auto has a starting pose)
                 () -> Subsystems.tracking.getChassisSpeeds(), // Current ChassisSpeeds supplier
-                speeds -> Subsystems.differentialDrive.driveChassisSpeeds(speeds), // Method that will drive the robot given ChassisSpeeds
+                speeds -> driveHandle.set(speeds), // Method that will drive the robot given ChassisSpeeds
                 new ReplanningConfig(), // Default path replanning config. See the API for the options here
                 () -> {
                     // Boolean supplier that controls when the path will be mirrored for the red alliance
@@ -63,7 +73,9 @@ public class Auto implements IPeriodicTask {
         LowerLauncherCommand lowerLauncherCommand = new LowerLauncherCommand();
         NamedCommands.registerCommand("LowerLauncher", lowerLauncherCommand);
 
-        testAuto = AutoBuilder.buildAuto("Red 4");
+        autoChooser = AutoBuilder.buildAutoChooser();
+
+        SmartDashboard.putData("Auto Chooser", autoChooser);
     }
     
     public List<RunContext> getAllowedRunContexts() { 
@@ -75,6 +87,8 @@ public class Auto implements IPeriodicTask {
     }
 
     public void onStart(RunContext ctx) {
+        driveHandle.takeControl(false);
+        testAuto = autoChooser.getSelected();
         testAuto.initialize();
     }
 
@@ -90,6 +104,7 @@ public class Auto implements IPeriodicTask {
     public void publishTelemetry() {}
 
     public void onStop() {
+        driveHandle.release();
         testAuto.end(true);
         Subsystems.differentialDrive.coast();
     }

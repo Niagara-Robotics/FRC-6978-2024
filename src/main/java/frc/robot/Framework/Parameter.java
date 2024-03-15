@@ -46,10 +46,12 @@ public class Parameter<T> {
     }
 
     public boolean hasControl(ParameterHandle<T> handle) {
+        if(controllingHandle == null) return false;
         return handle.equals(controllingHandle);
     }
 
     public boolean setValue(ParameterHandle<T> handle, T value) {
+        if(controllingHandle != null)
         if(!controllingHandle.equals(handle)) return false;
         this.value = value;
         if(this.onValueUpdated != null) this.onValueUpdated.accept(value);

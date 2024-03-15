@@ -2,6 +2,7 @@ package frc.robot.Platform;
 
 import frc.robot.Tasks.Lift;
 import frc.robot.Tasks.OperatorInput;
+import frc.robot.Tasks.AutoPilot;
 import frc.robot.Tasks.Auto;
 import frc.robot.Tasks.AutoShot;
 import frc.robot.Tasks.DifferentialDrive;
@@ -27,6 +28,8 @@ public class Subsystems {
     public static DriverInput driverInput = new DriverInput();
 
     public static AutoShot autoShot = new AutoShot();
+
+    public static AutoPilot autoPilot = new AutoPilot();
 
     public static Auto auto = new Auto();
 

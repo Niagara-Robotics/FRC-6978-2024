@@ -1,7 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -35,6 +35,9 @@ public class Robot extends TimedRobot{
         loopTimer = new Timer();
         loopTimer.reset();
         loopTimer.start();
+
+        DataLogManager.start();
+        DriverStation.startDataLog(DataLogManager.getLog());
     }
 
     @Override
@@ -42,13 +45,14 @@ public class Robot extends TimedRobot{
         Subsystems.telemetry.openFrame();
         loopTimer.restart();
         super.loopFunc();
-        Subsystems.telemetry.pushDouble("robot.looptime", loopTimer.get());
+        Subsystems.telemetry.pushDouble("scheduler_looptime", loopTimer.get());
         Subsystems.telemetry.closeFrame();
         
     }
 
     @Override
     public void robotPeriodic() {
+        DriverStation.refreshData();
         Schedulers.teleScheduler.run();
         Schedulers.idleScheduler.run();
     }

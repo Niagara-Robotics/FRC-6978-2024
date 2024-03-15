@@ -2,16 +2,9 @@ package frc.robot.Tasks;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.random.RandomGenerator;
 
-import org.opencv.core.Mat;
-
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.SPI.Mode;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.PIDController;
 import frc.robot.Framework.ParameterHandle;
@@ -29,18 +22,13 @@ public class DriverInput implements IPeriodicTask {
 
     ParameterHandle<Double> tiltHandle;
 
-    SPI testPort;
+    ParameterHandle<ChassisSpeeds> driveHandle;
 
     long lastSendTS;
-    
-    Timer animTimer;
 
     public DriverInput() {
         tiltHandle = Subsystems.launcher.tilt.getHandle("driver");
-        animTimer = new Timer();
-        
-        animTimer.start();
-        
+        driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("driverInput");
     }
 
 
@@ -62,12 +50,12 @@ public class DriverInput implements IPeriodicTask {
         x *= xMultiplier;
         y *= yMultiplier;
 
-        Subsystems.telemetry.pushDouble("DriveX", x);
-        Subsystems.telemetry.pushDouble("DriveY", y);
+        Subsystems.telemetry.pushDouble("driverInput_driveX", x);
+        Subsystems.telemetry.pushDouble("driverInput_driveY", y);
 
         ChassisSpeeds speeds = new ChassisSpeeds(y, 0, -x);
 
-        Subsystems.differentialDrive.driveChassisSpeeds(speeds);
+        driveHandle.set(speeds);
     }
 
     public void useMainDriverStick() {
@@ -87,7 +75,7 @@ public class DriverInput implements IPeriodicTask {
             double output = noteController.process(Subsystems.tracking.noteTargetX);
             if(Subsystems.tracking.noteTargetY > 1) {output = 0.0;};
 
-            Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0.8,0, output));
+            driveHandle.set(new ChassisSpeeds(0.8,0, output));
 
         } else driveStickVelocity(x, y, 3, 3.6);
 
@@ -144,12 +132,13 @@ public class DriverInput implements IPeriodicTask {
         }
 
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.autoAlignButton)) {
-            
+            driveHandle.release();
             autoAlign = true;
             Subsystems.autoShot.fullAutoLaunch();
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.autoAlignButton)) {
             autoAlign = false;
-            Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0,0));
+            driveHandle.takeControl(false);
+            driveHandle.set(new ChassisSpeeds(0,0,0));
             Subsystems.autoShot.cancelAutoLaunch();
         }
 
@@ -162,7 +151,7 @@ public class DriverInput implements IPeriodicTask {
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.autoNoteButton) || 
             (Subsystems.intake.intakeFinished() &&autoNote)) {
             autoNote = false;
-            Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0,0));
+            driveHandle.set(new ChassisSpeeds(0,0,0));
         }
         
         if(guestActive) {
@@ -197,6 +186,13 @@ public class DriverInput implements IPeriodicTask {
             Subsystems.autoShot.setupTrapShot();
         }
 
+        if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.trapShotButton) ||
+            Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.ampShotButton)) {
+            Subsystems.autoShot.cancelAutoLaunch();
+            driveHandle.takeControl(false);
+            driveHandle.set(new ChassisSpeeds(0,0,0));
+        }
+
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.intakeButton)) {
             Subsystems.intake.intakeNote();
         } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.intakeButton)) {
@@ -207,24 +203,8 @@ public class DriverInput implements IPeriodicTask {
     }
 
     public void publishTelemetry() {
-        Subsystems.telemetry.pushBoolean("driverInput.hasTiltControl", tiltHandle.hasControl());
-        //Subsystems.telemetry.pushDouble("autoAlign.closestAngle", closestAngleDelta(Subsystems.autoShot.angleToTarget(), Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians()));
-        
-        if((System.nanoTime() - lastSendTS)> 25000000) {
-            lastSendTS = System.nanoTime();
-            byte data[] = new byte[32];
+        Subsystems.telemetry.pushBoolean("driverInput_hasTiltControl", tiltHandle.hasControl());
 
-            data[0] = (byte)0xf4;
-            data[1] = 0; //slot
-            data[2] = 1; //cmd: set len
-            data[3] = 10;
-            
-            //testPort.write(data, 32);*/
-            //Subsystems.illumination.setStatic((byte)0, (int)(50*((animTimer.get() % 1.0)/1.0)), 0, 0);
-            Subsystems.telemetry.pushDouble("illumRed", (int)(50*((animTimer.get() % 25.0)/25.0)));
-        }
-
-        //Subsystems.illumination.setStatic((byte)0, (int)(50*(animTimer.get() % 1.0)), 0, 0);
     }
 
     public void onStop() {

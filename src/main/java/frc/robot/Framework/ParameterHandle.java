@@ -22,6 +22,10 @@ public class ParameterHandle<T> {
     public boolean takeControl(boolean exclusive) {
         return parent.takeControl(this, exclusive);
     }
+    
+    public void release() {
+        parent.releaseControl(this);
+    }
 
     public boolean hasControl() {
         return parent.hasControl(this);

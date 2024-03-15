@@ -1,5 +1,6 @@
 package frc.robot.Platform;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -47,7 +48,7 @@ public class Hardware {
     public static Solenoid driveGearShiftSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 0);
     public static Solenoid gripperSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 1);
 
-    public static DigitalInput floorSensor = new DigitalInput(0);
+    public static DigitalInput liftSensor = new DigitalInput(0);
     public static DigitalInput indexSensor = new DigitalInput(1);
 
     public static Counter noteExitCounter = new Counter(Counter.Mode.kTwoPulse);
@@ -138,5 +139,11 @@ public class Hardware {
 
         noteExitCounter.setUpSource(2);
         noteExitCounter.setUpSourceEdge(false, true);
+
+        liftMotor.setSelectedSensorPosition(0);
+        liftMotor.config_kF(0, Constants.Lift.kF);
+        liftMotor.config_kP(0, Constants.Lift.kP);
+
+        secondaryLiftMotor.set(ControlMode.Follower, 11);
     }
 }

@@ -11,6 +11,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.tracking,
         (IPeriodicTask)Subsystems.lift,
         (IPeriodicTask)Subsystems.autoShot,
+        (IPeriodicTask)Subsystems.autoPilot
     };
     
     public static IPeriodicTask[] teleopTasks = {
@@ -21,6 +22,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.autoShot,
         (IPeriodicTask)Subsystems.lift,
         (IPeriodicTask)Subsystems.operatorInput,
+        (IPeriodicTask)Subsystems.autoPilot
     };
 
     public static IPeriodicTask[] autonomousTasks = {
@@ -29,6 +31,7 @@ public class Tasks {
         (IPeriodicTask)Subsystems.auto,
         (IPeriodicTask)Subsystems.launcher,
         (IPeriodicTask)Subsystems.autoShot,
+        (IPeriodicTask)Subsystems.autoPilot,
     };
 
     public static IPeriodicTask[] idleTasks = {

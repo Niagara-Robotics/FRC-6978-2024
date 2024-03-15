@@ -56,8 +56,8 @@ public class Scheduler implements Runnable{
 
                     double delta = (double)(System.nanoTime() - startTS) / 1000000.0;
                     totalDelta += delta;
-                    if(!telemetry) Subsystems.telemetry.pushDouble(task.getClass().getName()+"_delta_T", delta); else
-                    Subsystems.telemetry.pushDouble(task.getClass().getName()+"_telemetry_delta_T", delta);
+                    if(!telemetry) Subsystems.telemetry.pushDouble("scheduler_" + name + "_" + task.getClass().getSimpleName()+"_deltaT", delta); else
+                    Subsystems.telemetry.pushDouble("scheduler_" + name + "_" + task.getClass().getSimpleName()+"_telemetry_deltaT", delta);
                 }
                 catch (Exception e) {
                     System.out.println("[" + name + 
@@ -65,7 +65,7 @@ public class Scheduler implements Runnable{
                 }
             }
         }
-        Subsystems.telemetry.pushDouble("scheduler." + name + ".delta_T", totalDelta);
+        Subsystems.telemetry.pushDouble("scheduler_" + name + "_deltaT", totalDelta);
 
         /*try {
             sleep(5);

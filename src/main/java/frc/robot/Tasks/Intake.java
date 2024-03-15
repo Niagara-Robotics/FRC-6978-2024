@@ -99,8 +99,8 @@ public class Intake implements IPeriodicTask{
     public boolean intakeFinished() {
         if(currentState.hasNote) return true;
         else if(currentState.indexSensor) {
-            Subsystems.illumination.setStatic((byte)0, 0, 120, 0);
-            Subsystems.illumination.setStatic((byte)1, 0, 120, 0);
+            Subsystems.illumination.setStatic((byte)0, 0, 180, 0);
+            Subsystems.illumination.setStatic((byte)1, 0, 180, 0);
             Subsystems.telemetry.pushEvent("intake.finished");
             idleIntake();
             currentState.hasNote = true;
@@ -119,7 +119,7 @@ public class Intake implements IPeriodicTask{
     }
 
     void evaluateSensors() {
-        currentState.floorSensor = Hardware.floorSensor.get();
+        currentState.floorSensor = false;
         currentState.indexSensor = !Hardware.indexSensor.get();
     }
 
@@ -156,14 +156,14 @@ public class Intake implements IPeriodicTask{
     }
 
     public void publishTelemetry() {
-        Subsystems.telemetry.pushBoolean("intake.indexSensor", currentState.indexSensor);
-        Subsystems.telemetry.pushBoolean("intake.floorRoller", currentState.floorRoller);
-        Subsystems.telemetry.pushBoolean("intake.indexRoller", currentState.indexRoller);
-        Subsystems.telemetry.pushBoolean("intake.hasNote", currentState.hasNote);
-        Subsystems.telemetry.pushBoolean("intake.finished", intakeFinished());
-        Subsystems.telemetry.pushDouble("intake.indexRollerVoltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
-        Subsystems.telemetry.pushDouble("intake.indexRollerVelocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
-        Subsystems.telemetry.pushDouble("intake.floorRollerVoltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
+        Subsystems.telemetry.pushBoolean("intake_indexSensor", currentState.indexSensor);
+        Subsystems.telemetry.pushBoolean("intake_floorRoller_active", currentState.floorRoller);
+        Subsystems.telemetry.pushBoolean("intake_indexRoller_active", currentState.indexRoller);
+        Subsystems.telemetry.pushBoolean("intake_hasNote", currentState.hasNote);
+        Subsystems.telemetry.pushBoolean("intake_finished", intakeFinished());
+        Subsystems.telemetry.pushDouble("intake_indexRoller_voltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushDouble("intake_indexRoller_velocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
+        Subsystems.telemetry.pushDouble("intake_floorRoller_voltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
     }
 
     public void onStop() {

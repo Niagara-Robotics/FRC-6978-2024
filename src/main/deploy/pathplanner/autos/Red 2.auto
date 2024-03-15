@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 15.404280026152648,
-      "y": 6.532756658105908
+      "x": 15.294051890187115,
+      "y": 6.295913932753006
     },
-    "rotation": 139.37853104867563
+    "rotation": 144.79531245531
   },
   "command": {
     "type": "sequential",
@@ -65,6 +65,18 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "redRightNoteReturn"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
           }
         }
       ]

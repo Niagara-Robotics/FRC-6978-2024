@@ -3,8 +3,11 @@ package frc.robot.Tasks;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
 
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -20,12 +23,24 @@ public class AutoShot implements IPeriodicTask {
     ParameterHandle<Double> launcherCurveHandle;
     ParameterHandle<Double> launcherTiltHandle;
 
+    //ParameterHandle<ChassisSpeeds> driveHandle;
+
     private boolean waitingToLaunch;
-    private double redSpeakerX = 16579.34;
+    private boolean waitingForAmpWhisker;
+    private double redSpeakerX = 16579.34 / 1000.0;
     private double blueSpeakerX = 0.0;
 
     private double speakerX = redSpeakerX;
-    private double redSpeakerY = 5547.87;
+    private double redSpeakerY = 5547.87 / 1000.0;
+
+    Pose2d ampPose;
+
+    private double targetX;
+    private double targetY;
+
+    private double angleOffset;
+
+    private boolean redAlliance;
 
     PIDController alignmentController;
 
@@ -34,9 +49,18 @@ public class AutoShot implements IPeriodicTask {
         launcherCurveHandle = Subsystems.launcher.spinVelocity.getHandle("autoShot");
         launcherTiltHandle = Subsystems.launcher.tilt.getHandle("autoShot");
 
+        //driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("autoShot");
+
         alignmentController = new PIDController(8.0, 0.0, 0.0);
 
         SmartDashboard.putNumber("autoShot_simDistance", 0);
+
+        targetX = redSpeakerX;
+        targetY = redSpeakerY;
+
+        redAlliance = true;
+
+        SmartDashboard.putNumber("autoShot_angleOffset", 0.0);
     }
 
     public List<RunContext> getAllowedRunContexts() { 
@@ -48,17 +72,16 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public boolean aligned() {
-        return Math.abs(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians() - angleToTarget()) < 0.1 && 
-        (System.nanoTime() - Subsystems.tracking.lastCameraCorrection) < 600000000;
+        return Math.abs(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians() - angleToTarget()) < 0.1;
     }
 
-    public double distance() {
-        return Math.sqrt(Math.pow(Math.abs(speakerX - (Subsystems.tracking.odometry.getPoseMeters().getX()*1000.0)), 2)+Math.pow(Math.abs(redSpeakerY - (Subsystems.tracking.odometry.getPoseMeters().getY()*1000.0)), 2)) *1.0;
+    public double distance(double x, double y) {
+        return Math.sqrt(Math.pow(Math.abs(x - (Subsystems.tracking.odometry.getPoseMeters().getX())), 2)+Math.pow(Math.abs(y - (Subsystems.tracking.odometry.getPoseMeters().getY())), 2));
     }
 
     public double angleToTarget() {
-        double dX = speakerX - (Subsystems.tracking.odometry.getPoseMeters().getX()*1000.0);
-        double dY = redSpeakerY - (Subsystems.tracking.odometry.getPoseMeters().getY()*1000.0);
+        double dX = targetX - (Subsystems.tracking.odometry.getPoseMeters().getX());
+        double dY = targetY - (Subsystems.tracking.odometry.getPoseMeters().getY());
 
         double angle = Math.atan2(dY, dX);
         if(angle < 0) angle = angle + Math.PI;
@@ -89,45 +112,93 @@ public class AutoShot implements IPeriodicTask {
         //return closestAbove;
     }
 
-    public void setupLauncher(double distance) {
+    private void setupShot(double tilt, double linearVelocity) {
         launcherLinearHandle.takeControl(false);
         launcherCurveHandle.takeControl(false);
         launcherTiltHandle.takeControl(false);
 
-        launcherLinearHandle.set(linearInterpolate(Constants.AutoShot.velocityMap, distance));
+        launcherLinearHandle.set(linearVelocity);
         launcherCurveHandle.set(0.0);
-        launcherTiltHandle.set(linearInterpolate(Constants.AutoShot.tiltMap, distance));
-        Subsystems.telemetry.pushDouble("autoShot_calculated_velocity", linearInterpolate(Constants.AutoShot.velocityMap, distance));
-        Subsystems.telemetry.pushDouble("autoShot_calculated_tilt", linearInterpolate(Constants.AutoShot.tiltMap, distance));
+        launcherTiltHandle.set(tilt);
+        Subsystems.telemetry.pushDouble("autoShot_calculated_velocity", linearVelocity);
+        Subsystems.telemetry.pushDouble("autoShot_calculated_tilt", tilt);
+    }
+
+    public void setupSpeakerShot(double distance) {
+        setupShot(linearInterpolate(Constants.AutoShot.tiltMap, distance*1000) + angleOffset, linearInterpolate(Constants.AutoShot.velocityMap, distance*1000));
+    }
+
+    private Pose2d calculateWhisker(Pose2d target, double whiskerLength) {
+        double whiskerX, whiskerY;
+
+        //offset the pose by the whisker length in the direction that the trap faces
+        whiskerX = whiskerLength * Math.cos(target.getRotation().getRadians());
+        whiskerY = whiskerLength * Math.sin(target.getRotation().getRadians());
+
+        return new Pose2d(target.getX() + whiskerX, target.getY() + whiskerY,target.getRotation());
     }
 
     public void setupAmpShot() {
-        launcherLinearHandle.takeControl(false);
-        launcherCurveHandle.takeControl(false);
-        launcherTiltHandle.takeControl(false);
+        setupShot(Constants.Launcher.ampTiltPosition, Constants.Launcher.ampVelocity);
 
-        launcherLinearHandle.set(Constants.Launcher.ampVelocity);
-        launcherCurveHandle.set(0.0);
-        launcherTiltHandle.set(Constants.Launcher.ampTiltPosition);
+        if(redAlliance) {
+            ampPose = Constants.AutoShot.redAmpPose;
+        } else {
+            ampPose = Constants.AutoShot.blueAmpPose;
+        }
+
+        Pose2d whiskerPose = calculateWhisker(ampPose, Constants.AutoShot.ampSecondWhiskerLength);
+
+        Subsystems.autoPilot.setTarget(whiskerPose, true);
+        Subsystems.autoPilot.driveToPoint();
+        waitingForAmpWhisker = true;
+    }
+
+    private Pose2d closestTrap() {
+        double shortestDistance = -1;
+        int closestIdx = -1;
+        Pose2d closestPose = new Pose2d();
+
+        Set<Entry<Integer, Pose2d>> pointSet;
+
+        if(redAlliance) {
+            pointSet = Constants.AutoShot.redTrapFiringPoints.entrySet();
+        } else {
+            pointSet = Constants.AutoShot.blueTrapFiringPoints.entrySet();
+        }
+
+        for (Entry<Integer, Pose2d> trapPose : pointSet) {
+            double trapDistance = distance(trapPose.getValue().getX(), trapPose.getValue().getY());
+            if(trapDistance < shortestDistance ||
+                shortestDistance < 0) {
+                shortestDistance = trapDistance;
+                closestIdx = trapPose.getKey();
+                closestPose = trapPose.getValue();
+            }
+
+        }
+
+        Subsystems.telemetry.pushDouble("autoShot_trap_closestIdx", closestIdx);
+        Subsystems.telemetry.pushDouble("autoShot_trap_distance", shortestDistance);
+
+        return closestPose;
     }
 
     public void setupTrapShot() {
-        launcherLinearHandle.takeControl(false);
-        launcherCurveHandle.takeControl(false);
-        launcherTiltHandle.takeControl(false);
+        setupShot(Constants.Launcher.trapTiltPosition, Constants.Launcher.trapVelocity);
 
-        launcherLinearHandle.set(Constants.Launcher.trapVelocity);
-        launcherCurveHandle.set(0.0);
-        launcherTiltHandle.set(Constants.Launcher.trapTiltPosition);
-    }
+        Pose2d trapPose = closestTrap();
 
-    double closestAngleDelta(double targetRadians, double actualRadians) {
-        double delta = targetRadians - actualRadians;
-        Subsystems.telemetry.pushDouble("rawDelta", delta);
-        if(delta > Math.PI) delta = -(delta - Math.PI);
-        if(delta < -Math.PI) delta = (delta + Math.PI*2);
-        
-        return delta;
+        double whiskerX, whiskerY;
+
+        //offset the pose by the whisker length in the direction that the trap faces
+        whiskerX = Constants.AutoShot.trapWhiskerLength * Math.cos(trapPose.getRotation().getRadians());
+        whiskerY = Constants.AutoShot.trapWhiskerLength * Math.sin(trapPose.getRotation().getRadians());
+
+        Pose2d whiskerPose = new Pose2d(trapPose.getX() + whiskerX, trapPose.getY() + whiskerY,closestTrap().getRotation());
+
+        Subsystems.autoPilot.setTarget(whiskerPose, true);
+        Subsystems.autoPilot.driveToPoint();
     }
 
     public void fireWhenReady() {
@@ -135,17 +206,18 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void fullAutoLaunch() {
-        setupLauncher(distance());
+        targetX = speakerX;
+        targetY = redSpeakerY;
+        setupSpeakerShot(distance(targetX, targetY));
+        Subsystems.autoPilot.setTarget(new Pose2d(speakerX, redSpeakerY, new Rotation2d()), true);
+        Subsystems.autoPilot.facePoint();
         fireWhenReady();
-        alignmentController.init();
-        alignmentController.set(0.0);
-        alignmentController.setLimit(2.8);
     }
 
     public void cancelAutoLaunch() {
         waitingToLaunch = false;
         Subsystems.launcher.stopLauncher();
-        Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0, 0));
+        Subsystems.autoPilot.disable();
     }
 
     public void onStart(RunContext ctx) {
@@ -157,24 +229,20 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void onLoop(RunContext ctx) {
-
         var alliance = DriverStation.getAlliance();
         if(alliance.isPresent()) {
             if(alliance.get() == Alliance.Red) {
                 speakerX = redSpeakerX;
+                redAlliance = true;
             } else {
                 speakerX = blueSpeakerX;
+                redAlliance = false;
             }
         }
 
         if(waitingToLaunch) {
-            setupLauncher(distance());
-            double delta = -closestAngleDelta(Subsystems.autoShot.angleToTarget(), Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians());
-            Subsystems.telemetry.pushDouble("autoAlign.delta", delta);
-            double output = alignmentController.process(delta);
-            Subsystems.telemetry.pushDouble("autoAlign.output", output);
-            Subsystems.differentialDrive.driveChassisSpeeds(new ChassisSpeeds(0,0, output));
-            if(aligned() && Subsystems.launcher.tiltFinished() && Math.abs(output) < 0.2) {
+            setupSpeakerShot((distance(targetX, targetY)));
+            if(aligned() && Subsystems.launcher.tiltFinished()) {
                 Subsystems.launcher.launchNote();
             } 
             if(Subsystems.launcher.finished()) {
@@ -182,13 +250,25 @@ public class AutoShot implements IPeriodicTask {
                 Subsystems.illumination.setStatic((byte)0, 0, 130, 0);
             }
         }
+
+        if(waitingForAmpWhisker) {
+            if(Subsystems.autoPilot.finished()) {
+                Pose2d secondStagePose = calculateWhisker(ampPose, Constants.AutoShot.ampWhiskerLength);
+                Subsystems.autoPilot.disable();
+                Subsystems.autoPilot.setTarget(secondStagePose, true);
+                Subsystems.autoPilot.driveToPoint();
+                waitingForAmpWhisker = false;
+            }
+        }
+
+        angleOffset = SmartDashboard.getNumber("autoShot_angleOffset", angleOffset);
     }
 
     public void publishTelemetry() {
-        Subsystems.telemetry.pushBoolean("autoShot.aligned", aligned());
-        Subsystems.telemetry.pushDouble("autoShot.distance", distance());
-        Subsystems.telemetry.pushDouble("autoShot_tiltVal", linearInterpolate(Constants.AutoShot.tiltMap, distance()));
-        Subsystems.telemetry.pushDouble("autoShot.angleToTarget", angleToTarget());
+        Subsystems.telemetry.pushBoolean("autoShot_aligned", aligned());
+        Subsystems.telemetry.pushDouble("autoShot_distance", distance(targetX, targetY));
+        //Subsystems.telemetry.pushDouble("autoShot_tiltVal", linearInterpolate(Constants.AutoShot.tiltMap, distance()));
+        Subsystems.telemetry.pushDouble("autoShot_angleToTarget", angleToTarget());
     }
 
     public void onStop() {

@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 2.290902901250247,
-      "y": 3.543347068175618
+      "x": 15.459091807072504,
+      "y": 6.997498800553156
     },
-    "rotation": 0
+    "rotation": 179.40998725421937
   },
   "command": {
     "type": "sequential",
@@ -14,7 +14,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Test 1"
+            "pathName": "Basic"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
           }
         }
       ]

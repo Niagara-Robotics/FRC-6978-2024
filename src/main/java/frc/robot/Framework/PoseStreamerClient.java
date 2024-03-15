@@ -108,7 +108,7 @@ public class PoseStreamerClient extends Thread {
         long clock_response_ts = System.nanoTime();
         lastHeartBeatReceive = clock_response_ts;
         estimated_latency = (clock_response_ts - clock_request_ts);
-        System.out.println("Estimating one-way latency at " + (estimated_latency / 2000000.0) + "ms");
+        //System.out.println("Estimating one-way latency at " + (estimated_latency / 2000000.0) + "ms");
 
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -118,12 +118,12 @@ public class PoseStreamerClient extends Thread {
         long remote_time = buf.getLong();
 
         clock_offset = (remote_time - (clock_response_ts - (estimated_latency / 2)));
-        System.out.println("Set clock offset to " + clock_offset);
+        //System.out.println("Set clock offset to " + clock_offset);
 
-        double remote_send_estimate = (clock_response_ts - (remote_time - clock_offset))/1000000.0;
+        //double remote_send_estimate = (clock_response_ts - (remote_time - clock_offset))/1000000.0;
 
-        System.out.println("Got time: " + remote_time);
-        System.out.println("Got estimate: " + remote_send_estimate);
+        //System.out.println("Got time: " + remote_time);
+        //System.out.println("Got estimate: " + remote_send_estimate);
     }
 
     void readStreamData() throws IOException {
@@ -147,6 +147,8 @@ public class PoseStreamerClient extends Thread {
             buf.put(0, input.readNBytes(8));
             frame.values.add(buf.getDouble(0));
         }
+
+        frame.id = received_object_id;
 
         for (StreamRequest streamRequest : wantedPoses) {
             if(
@@ -255,7 +257,7 @@ public class PoseStreamerClient extends Thread {
             if((System.nanoTime() - lastHeartBeatReceive) > 1000000000) {
                 connected = false;
             }
-            Subsystems.telemetry.pushBoolean("PoseStreamer.connected", connected);
+            Subsystems.telemetry.pushBoolean("poseStreamer_connected", connected);
             try {
                 if(!connected) {
                     requestid = 0;

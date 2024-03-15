@@ -6,12 +6,22 @@
       }
     },
     "Other Devices": {
-      "Talon FX (v6)[1]": {
+      "Talon FX (v6)[1]/Rotor Sensor": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[2]/Rotor Sensor": {
         "header": {
           "open": true
         }
       },
       "Talon FX (v6)[30]": {
+        "header": {
+          "open": true
+        }
+      },
+      "navX-Sensor[0]": {
         "header": {
           "open": true
         }
@@ -28,7 +38,8 @@
   },
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Auto Chooser": "String Chooser"
     }
   },
   "NetworkTables": {

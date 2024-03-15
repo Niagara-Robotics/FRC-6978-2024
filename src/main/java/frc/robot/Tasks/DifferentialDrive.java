@@ -38,15 +38,20 @@ public class DifferentialDrive implements IPeriodicTask{
 
     Parameter<Double> speedLimit;
 
+    Parameter<ChassisSpeeds> wantedChassisSpeeds;
+
     RunContext lastContext;
     
     public DifferentialDrive() {
         speedLimit = new Parameter<Double>(3.0);
+        wantedChassisSpeeds = new Parameter<ChassisSpeeds>(new ChassisSpeeds());
+
+        wantedChassisSpeeds.onValueUpdated = (speeds)->driveChassisSpeeds(speeds);
     }
 
     public void onStart(RunContext context) {
         if(context == RunContext.teleoperated) {
-            //useStick();
+            mode = DriveMode.none;
         } else if(context == RunContext.autonomous) {
             Hardware.leftDriveLeader.setNeutralMode(NeutralModeValue.Brake);
             Hardware.rightDriveLeader.setNeutralMode(NeutralModeValue.Brake);
@@ -65,35 +70,16 @@ public class DifferentialDrive implements IPeriodicTask{
         }*/
 
         switch (mode) {
-            case legacy_stick:
-                driveStickVelocity();
-                break;
             case calibrate:
                 onCalibrateFeedforward();
                 break;
             default:
                 break;
         }
-        Subsystems.telemetry.pushDouble("leftApplied", Hardware.leftDriveLeader.getMotorVoltage().getValue());
-        Subsystems.telemetry.pushDouble("rightApplied", Hardware.rightDriveLeader.getMotorVoltage().getValue());
-
     }
 
     public DriveMode getMode() {
         return mode;
-    }
-
-    public void useStick() {
-        Subsystems.telemetry.pushEvent("DifferentialDrive.EnterStick");
-        //setBrake(false);
-        leftVelocityRequest = new VelocityVoltage(0);
-        rightVelocityRequest = new VelocityVoltage(0);
-        leftVelocityRequest.UpdateFreqHz = 200;
-        rightVelocityRequest.UpdateFreqHz = 200;
-
-        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
-        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-        mode = DriveMode.legacy_stick;
     }
 
     void initVelocityDrive() {
@@ -105,37 +91,6 @@ public class DifferentialDrive implements IPeriodicTask{
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
         mode = DriveMode.modern_velocity;
         System.out.println("DifferentialDrive: switched to modern velocity");
-    }
-
-    void driveStickVelocity() {
-        double x;
-        double y;
-
-        x = Hardware.driverStick.getRawAxis(Constants.DriverControls.steeringAxis);
-        y = (Hardware.driverStick.getRawAxis(Constants.DriverControls.forwardAxis) + 1 )/2 - 
-            (Hardware.driverStick.getRawAxis(Constants.DriverControls.reverseAxis) + 1 )/2;
-
-        x = (Math.abs(x) > Constants.Drive.deadZone)? 
-            ((x > 0)? 
-                ((x-Constants.Drive.deadZone)/(1-Constants.Drive.deadZone)) :
-                ((x+Constants.Drive.deadZone)/(1-Constants.Drive.deadZone))
-            ) 
-            : 0;
-
-        y = (Math.abs(y) > Constants.Drive.deadZone)? 
-            ((y > 0)? 
-                ((y-Constants.Drive.deadZone)/(1-Constants.Drive.deadZone)) :
-                ((y+Constants.Drive.deadZone)/(1-Constants.Drive.deadZone))
-            ) 
-            : 0;
-
-        x *= Constants.Drive.xMultiplier;
-        y *= Constants.Drive.yMultiplier;
-
-        Subsystems.telemetry.pushDouble("DriveX", x);
-        Subsystems.telemetry.pushDouble("DriveY", y);
-
-        driveVelocity(x, y);
     }
 
     void calibrateFeedforward() {
@@ -155,8 +110,8 @@ public class DifferentialDrive implements IPeriodicTask{
         Subsystems.telemetry.pushDouble("calibrationTime", calibrationTimer.get());
         double input = ((int)((calibrationTimer.get() / 10.0) * 10));
 
-        Subsystems.telemetry.pushDouble("leftFeedForwardRatio", input / Hardware.leftDriveLeader.getVelocity().getValue());
-        Subsystems.telemetry.pushDouble("rightFeedForwardRatio", input / Hardware.rightDriveLeader.getVelocity().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftFeedForwardRatio", input / Hardware.leftDriveLeader.getVelocity().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightFeedForwardRatio", input / Hardware.rightDriveLeader.getVelocity().getValue());
 
         Subsystems.telemetry.pushDouble("calibrationRequestedVoltage", input);
         calibrationOut.Output = input;
@@ -164,13 +119,13 @@ public class DifferentialDrive implements IPeriodicTask{
         Hardware.rightDriveLeader.setControl(calibrationOut);
     }
 
-    public void driveChassisSpeeds(ChassisSpeeds speeds) {
+    private void driveChassisSpeeds(ChassisSpeeds speeds) {
         if(mode != DriveMode.modern_velocity) {
             initVelocityDrive();
         }
 
-        Subsystems.telemetry.pushDouble("drive.requestedOmega", speeds.omegaRadiansPerSecond);
-        Subsystems.telemetry.pushDouble("drive.requestedVX", speeds.vxMetersPerSecond);
+        Subsystems.telemetry.pushDouble("drive_requestedOmega", speeds.omegaRadiansPerSecond);
+        Subsystems.telemetry.pushDouble("drive_requestedVX", speeds.vxMetersPerSecond);
 
 
         DifferentialDriveWheelSpeeds wheelSpeeds = Hardware.kinematics.toWheelSpeeds(speeds);
@@ -195,8 +150,8 @@ public class DifferentialDrive implements IPeriodicTask{
 
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-        Subsystems.telemetry.pushDouble("DifferentialDrive.leftVelocityTarget", left);
-        Subsystems.telemetry.pushDouble("DifferentialDrive.rightVelocityTarget", right);
+        Subsystems.telemetry.pushDouble("drive_leftVelocityTarget", left);
+        Subsystems.telemetry.pushDouble("drive_rightVelocityTarget", right);
     }
 
     public void coast() {
@@ -213,45 +168,20 @@ public class DifferentialDrive implements IPeriodicTask{
         mode = DriveMode.none;
     }
 
-    void driveVelocity(double angular, double linear) {
-        if(linear > Constants.Drive.maxLinearVelocity){
-            linear = Constants.Drive.maxLinearVelocity;
-        }else if(linear < -Constants.Drive.maxLinearVelocity){
-            linear = -Constants.Drive.maxLinearVelocity;
-        }
-
-        if(angular > Constants.Drive.maxAngularVelocity){
-            angular = Constants.Drive.maxAngularVelocity;
-        }else if(angular < -Constants.Drive.maxAngularVelocity){
-            angular = -Constants.Drive.maxAngularVelocity;
-        }
-        
-        double leftSpeed = (linear + angular)/Constants.Drive.rotorToMeters;
-        double rightSpeed = (linear - angular)/Constants.Drive.rotorToMeters;
-
-        leftVelocityRequest.Velocity = leftSpeed;
-        rightVelocityRequest.Velocity = rightSpeed;
-        Hardware.leftDriveLeader.setControl(leftVelocityRequest);
-        Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-        Subsystems.telemetry.pushDouble("drive.leftVelocityTarget", leftSpeed);
-        Subsystems.telemetry.pushDouble("drive.rightVelocityTarget", rightSpeed);
-        
-    }
-
     public void publishTelemetry() {
-        Subsystems.telemetry.pushDouble("drive.leftLeader.motorVoltage", Hardware.leftDriveLeader.getMotorVoltage().getValue());
-        Subsystems.telemetry.pushDouble("drive.rightLeader.motorVoltage", Hardware.rightDriveLeader.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftLeader_motorVoltage", Hardware.leftDriveLeader.getMotorVoltage().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightLeader_motorVoltage", Hardware.rightDriveLeader.getMotorVoltage().getValue());
 
-        Subsystems.telemetry.pushDouble("drive.leftLeader.temperature", Hardware.leftDriveLeader.getDeviceTemp().getValue());
-        Subsystems.telemetry.pushDouble("drive.leftLeader.current", Hardware.leftDriveLeader.getStatorCurrent().getValue());
-        Subsystems.telemetry.pushDouble("drive.leftFollower.temperature", Hardware.leftDrive2.getDeviceTemp().getValue());
-        Subsystems.telemetry.pushDouble("drive.leftFollower.current", Hardware.leftDrive2.getStatorCurrent().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftLeader_temperature", Hardware.leftDriveLeader.getDeviceTemp().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftLeader_current", Hardware.leftDriveLeader.getStatorCurrent().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftFollower_temperature", Hardware.leftDrive2.getDeviceTemp().getValue());
+        Subsystems.telemetry.pushDouble("drive_leftFollower_current", Hardware.leftDrive2.getStatorCurrent().getValue());
 
 
-        Subsystems.telemetry.pushDouble("drive.rightLeader.temperature", Hardware.rightDriveLeader.getDeviceTemp().getValue());
-        Subsystems.telemetry.pushDouble("drive.rightLeader.current", Hardware.rightDriveLeader.getStatorCurrent().getValue());
-        Subsystems.telemetry.pushDouble("drive.rightFollower.temperature", Hardware.rightDrive2.getDeviceTemp().getValue());
-        Subsystems.telemetry.pushDouble("drive.rightFollower.current", Hardware.rightDrive2.getStatorCurrent().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightLeader_temperature", Hardware.rightDriveLeader.getDeviceTemp().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightLeader_current", Hardware.rightDriveLeader.getStatorCurrent().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightFollower_temperature", Hardware.rightDrive2.getDeviceTemp().getValue());
+        Subsystems.telemetry.pushDouble("drive_rightFollower_current", Hardware.rightDrive2.getStatorCurrent().getValue());
     }
 
     public List<RunContext> getAllowedRunContexts() { 

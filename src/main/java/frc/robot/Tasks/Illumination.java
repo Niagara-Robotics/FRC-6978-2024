@@ -3,8 +3,6 @@ package frc.robot.Tasks;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import com.fasterxml.jackson.core.util.ByteArrayBuilder;
-
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SPI.Mode;
 import edu.wpi.first.wpilibj.util.Color8Bit;
@@ -32,7 +30,7 @@ public class Illumination {
         //setBreathing((byte)2, (short)6000, 0, 100, 0);
         //setBreathing((byte)3, (short)1000, 0, 100, 0);
 
-        Color8Bit idleColor = new Color8Bit(120, 0, 0);
+        //Color8Bit idleColor = new Color8Bit(120, 0, 0);
 
         //setMarquee(1, (short)800, (short)800, 12, 1, 12, true, true, idleColor, new Color8Bit(0,0,0));
 

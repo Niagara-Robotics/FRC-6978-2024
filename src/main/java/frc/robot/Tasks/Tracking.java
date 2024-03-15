@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.logging.LogManager;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.PoseStreamerClient;
@@ -57,7 +59,8 @@ public class Tracking implements IPeriodicTask {
     Pose2d robotPose;
 
     Pose2d cameraPose;
-    StructPublisher<Pose2d> posePublisher;
+    StructPublisher<Pose2d> fusedPosePublisher;
+    StructPublisher<Pose2d> cameraPosePublisher;
 
     public long lastCameraCorrection;
 
@@ -149,6 +152,7 @@ public class Tracking implements IPeriodicTask {
                 rightPosition.getValue() * Constants.Drive.rotorToMeters,
                 cameraPose);
                 lastCameraCorrection = System.nanoTime();
+            Subsystems.telemetry.pushBoolean("tracking.", false);
             return;
         }
 
@@ -158,7 +162,7 @@ public class Tracking implements IPeriodicTask {
                 closestSnapshot.rightDistance,
                 cameraPose);
         int numFusedSnapshots = 0;
-        for (int i = 0; i < tempSnapshots.size(); i++) {
+        while(tempSnapshots.size() > 0) {
             OdometrySnapshot snapshot = tempSnapshots.pop();
             odometry.update(
                 snapshot.gyroRotation,
@@ -169,6 +173,10 @@ public class Tracking implements IPeriodicTask {
         }
         Subsystems.telemetry.pushDouble("tracking.numFusedSnapshots", numFusedSnapshots);
         lastCameraCorrection = System.nanoTime();
+    }
+
+    public boolean poseGood() {
+        return (System.nanoTime() - lastCameraCorrection) / 1000000 < 400;
     }
 
     public void setOdometryPose(Pose2d pose) {
@@ -203,7 +211,9 @@ public class Tracking implements IPeriodicTask {
     }
 
     public void onStart(RunContext ctx) {
-        posePublisher = NetworkTableInstance.getDefault().getTable("SmartDashboard").getStructTopic("MyPose", Pose2d.struct).publish();
+        fusedPosePublisher = NetworkTableInstance.getDefault().getTable("SmartDashboard").getStructTopic("tracking_FusedPose", Pose2d.struct).publish();
+
+        cameraPosePublisher = NetworkTableInstance.getDefault().getTable("SmartDashboard").getStructTopic("tracking_CameraPose", Pose2d.struct).publish();
 
         initOdometry();
         client = new PoseStreamerClient("vision.local", 8833);
@@ -213,21 +223,20 @@ public class Tracking implements IPeriodicTask {
                 Subsystems.telemetry.pushDouble("tracking.cameraPose" + i, frame.values.get(i));
             }
             Subsystems.telemetry.pushDouble("tracking.cameraPoseDeltaT", (System.nanoTime() - frame.timestamp)/1000000.0);
-            if(frame.values.get(5) > 1 && frame.values.get(4) < 0.5) { //require at least 2 tags
-                robotX = frame.values.get(0);
-                robotY = frame.values.get(1);
-                cameraPose = new Pose2d(robotX/1000.0, robotY/1000.0, new Rotation2d(frame.values.get(3) + Math.PI));
+            robotX = frame.values.get(0);
+            robotY = frame.values.get(1);
+            cameraPose = new Pose2d(robotX/1000.0, robotY/1000.0, new Rotation2d(frame.values.get(3) + Math.PI));
+            cameraPosePublisher.set(cameraPose);
+            if(frame.values.get(5) > 0 && frame.values.get(4) < 1.25 && (frame.values.get(2) < Constants.Tracking.zClamp) && frame.values.get(7) > Constants.Tracking.minCornerDist) { //require at least 2 tags
                 synchronized(odometry) {
-                    fuseCameraPose(cameraPose, frame.timestamp - 350000000);
+                    fuseCameraPose(cameraPose, frame.timestamp - 300000000);
                 }
-                
-
             }
         });
 
-        client.requestPose(2, 4, (frame) -> {
+        client.requestPose(2, 0, (frame) -> {
             for(int i=0; i<frame.values.size(); i++) {
-                Subsystems.telemetry.pushDouble("tracking.tagPose" + i, frame.values.get(i));
+                Subsystems.telemetry.pushDouble("tracking.tag" + frame.id + "Pose" + i, frame.values.get(i));
             }
             Subsystems.telemetry.pushDouble("tracking.tagPoseDeltaT", (System.nanoTime() - frame.timestamp)/1000000.0);
             shotTargetX = frame.values.get(0);
@@ -238,19 +247,25 @@ public class Tracking implements IPeriodicTask {
             Subsystems.telemetry.pushDouble("tracking.notePoseX", frame.values.get(0) -320);
             Subsystems.telemetry.pushDouble("tracking.notePoseY", frame.values.get(1) -240);
             noteTargetX = frame.values.get(0) - 320;
-            noteTargetX = frame.values.get(1) - 240;
+            noteTargetY = frame.values.get(1) - 240;
         });
+
+        /*client.requestPose(4, 0, (frame) -> {
+            
+        });*/
+
         client.awaiting_clock_request = true;
     }
 
     public void publishTelemetry() {
-        Subsystems.telemetry.pushDouble("tracking.odometryX", odometry.getPoseMeters().getX());
-        Subsystems.telemetry.pushDouble("tracking.odometryY", odometry.getPoseMeters().getY());
-        Subsystems.telemetry.pushDouble("tracking.odometryRadians", odometry.getPoseMeters().getRotation().getRadians());
-        Subsystems.telemetry.pushDouble("tracking.leftPosition", leftPosition.getValue());
-        Subsystems.telemetry.pushDouble("tracking.rightPosition", rightPosition.getValue());
-        Subsystems.telemetry.pushDouble("tracking.theta", getFieldRelativeRotation().getDegrees());
-        Subsystems.telemetry.pushDouble("tracking.omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRate()));
+        Subsystems.telemetry.pushDouble("tracking_odometryX", odometry.getPoseMeters().getX());
+        Subsystems.telemetry.pushDouble("tracking_odometryY", odometry.getPoseMeters().getY());
+        Subsystems.telemetry.pushDouble("tracking_odometryRadians", odometry.getPoseMeters().getRotation().getRadians());
+        Subsystems.telemetry.pushDouble("tracking_leftPosition", leftPosition.getValue());
+        Subsystems.telemetry.pushDouble("tracking_rightPosition", rightPosition.getValue());
+        Subsystems.telemetry.pushDouble("tracking_theta", getFieldRelativeRotation().getDegrees());
+        Subsystems.telemetry.pushDouble("tracking_omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRate()));
+        Subsystems.telemetry.pushBoolean("tracking_poseGood", poseGood());
     }
 
     public void onLoop(RunContext ctx) {
@@ -259,7 +274,7 @@ public class Tracking implements IPeriodicTask {
         synchronized(odometry) {
             updateOdometry();
         }
-        posePublisher.set(odometry.getPoseMeters());
+        fusedPosePublisher.set(odometry.getPoseMeters());
     }
 
     public void onStop() {}

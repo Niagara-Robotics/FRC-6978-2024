@@ -16,6 +16,10 @@ public class RamseteController {
         currentPose.theta = pose.getRotation().getRadians();
     }
 
+    void setTarget(Vector2D target) {
+        this.target = target;
+    }
+
     ChassisSpeeds evaluate() {
         double dx = target.x - currentPose.x;
         double dy = target.y - currentPose.y;
