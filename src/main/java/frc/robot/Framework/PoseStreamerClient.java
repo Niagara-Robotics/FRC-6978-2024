@@ -191,7 +191,7 @@ public class PoseStreamerClient extends Thread {
             if(preamble2 != 0xb3) return;
 
             int packetType = input.read();
-            int headerLength = input.read();
+            input.read(); //header length
             switch (packetType) {
                 case 0x10:
                     readStreamData();
