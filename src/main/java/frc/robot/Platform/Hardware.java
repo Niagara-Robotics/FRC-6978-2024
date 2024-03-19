@@ -79,6 +79,8 @@ public class Hardware {
         leftDriveConfiguration.Slot0.kV = Constants.Drive.kVleft;
         leftDriveConfiguration.Slot0.kS = Constants.Drive.kSleft;
         leftDriveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        leftDriveConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        leftDriveConfiguration.CurrentLimits.SupplyCurrentLimit = Constants.Drive.supplyCurrentLimit;
 
         rightDriveConfiguration.Slot0.kP = Constants.Drive.kP;
         rightDriveConfiguration.Slot0.kI = Constants.Drive.kI;
@@ -87,9 +89,15 @@ public class Hardware {
         rightDriveConfiguration.Slot0.kS = Constants.Drive.kSright;
         rightDriveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         rightDriveConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        rightDriveConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
+        rightDriveConfiguration.CurrentLimits.SupplyCurrentLimit = Constants.Drive.supplyCurrentLimit;
+        //rightDriveConfiguration.CurrentLimits.SupplyCurrentThreshold = Constants.Drive.supplyCurrentLimit;
 
         leftDriveLeader.getConfigurator().apply(leftDriveConfiguration);
         rightDriveLeader.getConfigurator().apply(rightDriveConfiguration);
+
+        leftDrive2.getConfigurator().apply(leftDriveConfiguration);
+        rightDrive2.getConfigurator().apply(rightDriveConfiguration);
 
         leftDriveLeader.setPosition(0);
         rightDriveLeader.setPosition(0);
@@ -98,6 +106,8 @@ public class Hardware {
         launcherConfiguration.Slot0.kP = Constants.Launcher.kP;
         launcherConfiguration.Slot0.kV = Constants.Launcher.left_kV;
         launcherConfiguration.Slot0.kS = Constants.Launcher.kS;
+        launcherConfiguration.CurrentLimits.SupplyCurrentLimit = Constants.Launcher.maxWheelCurrent;
+        launcherConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
         //75.8, 
         leftLauncherStage2.getConfigurator().apply(launcherConfiguration);
         leftLauncherStage1.getConfigurator().apply(launcherConfiguration);

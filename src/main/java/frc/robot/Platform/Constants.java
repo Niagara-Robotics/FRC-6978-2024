@@ -8,13 +8,15 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class Constants {
     public static class Drive {
         //volts
-        public static double kP = 0.05;
+        public static double kP = 0.2;
         public static double kI = 0.0;
         public static double kD = 0.000;
         public static double kVright = 0.109;
-        public static double kSright = 0.11;
+        public static double kSright = 0.19;
         public static double kVleft = 0.1085;
-        public static double kSleft = 0.11;
+        public static double kSleft = 0.19;
+
+        public static double supplyCurrentLimit = 50;
 
         public static double rotorToMeters = 0.04045525091; //25.266 rotations per meter 
         public static double trackWidth = 1.25; //meters
@@ -37,6 +39,9 @@ public class Constants {
 
     public static class Launcher {
         public static double rotorToMeters = 5;
+
+        public static double maxWheelCurrent = 15;
+
         //60,12
         //default stage 2 velocity target(this is also parameterized)
         public static double defaultVelocity = 80;

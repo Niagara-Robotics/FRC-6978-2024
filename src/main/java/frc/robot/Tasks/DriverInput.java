@@ -65,9 +65,7 @@ public class DriverInput implements IPeriodicTask {
         
 
         if(autoAlign) {
-            //Subsystems.telemetry.pushDouble("autoAlign.delta", alignmentController. - 640);
-            //Subsystems.telemetry.pushDouble("autoAlign.output", alignmentController.process(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians()));
-
+ 
         } else if(autoNote) {
             Subsystems.telemetry.pushDouble("autoNote.delta", Subsystems.tracking.noteTargetX);
             Subsystems.telemetry.pushDouble("autoNote.output", noteController.process(Subsystems.tracking.noteTargetX));
@@ -77,7 +75,7 @@ public class DriverInput implements IPeriodicTask {
 
             driveHandle.set(new ChassisSpeeds(0.8,0, output));
 
-        } else driveStickVelocity(x, y, 3, 3.6);
+        } else driveStickVelocity(x, y, 3, 3.65);
 
         //shoot button
         if(Hardware.driverStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
