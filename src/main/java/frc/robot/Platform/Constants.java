@@ -153,10 +153,10 @@ public class Constants {
     }
 
     public static class AutoPilot {
-        public static double anglekP = 4.0;
+        public static double anglekP = 4.5;
         public static double angularVelocityLimit = 3.0; //radians per second
 
-        public static double distancekP = 3.0;
+        public static double distancekP = 4.0;
         public static double linearVelocityLimit = 1.5; //radians per second
         public static double deltaStopPoint = 0.8;
 
