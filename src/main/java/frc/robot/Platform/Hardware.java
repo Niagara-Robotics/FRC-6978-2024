@@ -124,6 +124,7 @@ public class Hardware {
         launcherTiltConfiguration.Voltage.PeakForwardVoltage = Constants.Launcher.tiltMaxOutputUp;
         launcherTiltConfiguration.Voltage.PeakReverseVoltage = -Constants.Launcher.tiltMaxOutputDown;
         launcherTiltConfiguration.Slot0.kP = Constants.Launcher.tiltKp;
+        launcherTiltConfiguration.Slot0.kD = Constants.Launcher.tiltKd;
         launcherTiltConfiguration.Slot0.kG = Constants.Launcher.tiltKg;
         launcherTiltConfiguration.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
         launcherTiltConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;

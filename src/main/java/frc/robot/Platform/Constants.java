@@ -63,8 +63,9 @@ public class Constants {
         //both of these need to be POSITIVE!!
         public static double tiltMaxOutputUp = 3.0;
         public static double tiltMaxOutputDown = 0.95;
-        public static double tiltKp = 95; //TODO: estimate for appropriate kP with new sensor ratio
-        public static double tiltKg = 0.313; //TODO: determine appropriate kG for cosine approximation
+        public static double tiltKp = 75; //TODO: estimate for appropriate kP with new sensor ratio
+        public static double tiltKd = 0.6;
+        public static double tiltKg = 0.333; //TODO: determine appropriate kG for cosine approximation
 
         public static double tiltDefaultPosition = -0.1134464014;
 

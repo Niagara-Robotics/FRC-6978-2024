@@ -115,6 +115,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
         target = (target < Constants.Launcher.tiltMinPosition)? Constants.Launcher.tiltMinPosition : target;
         tiltPositionControl.Position = target;
         Hardware.launcherTiltMotor.setControl(tiltPositionControl);
+        Subsystems.telemetry.pushDouble("launcher_tiltTarget", target);
     }
 
     public boolean tiltFinished() {
