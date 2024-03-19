@@ -248,6 +248,9 @@ public class AutoShot implements IPeriodicTask {
             if(Subsystems.launcher.finished()) {
                 cancelAutoLaunch();
                 Subsystems.illumination.setStatic((byte)0, 0, 130, 0);
+                if(Constants.AutoShot.dropTiltAfterSpeakerShot) {
+                    launcherTiltHandle.set(Constants.Launcher.tiltDefaultPosition);
+                }
             }
         }
 

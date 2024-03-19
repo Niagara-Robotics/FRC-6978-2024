@@ -129,6 +129,8 @@ public class Constants {
 
 
         public static double trapWhiskerLength = 0.85;
+
+        public static boolean dropTiltAfterSpeakerShot = true;
     }
 
     public static class Intake {
