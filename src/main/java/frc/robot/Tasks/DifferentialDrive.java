@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -150,8 +150,8 @@ public class DifferentialDrive implements IPeriodicTask{
 
         Hardware.leftDriveLeader.setControl(leftVelocityRequest);
         Hardware.rightDriveLeader.setControl(rightVelocityRequest);
-        Subsystems.telemetry.pushDouble("drive_leftVelocityTarget", left);
-        Subsystems.telemetry.pushDouble("drive_rightVelocityTarget", right);
+        Subsystems.telemetry.pushDouble("drive_leftVelocityTarget", leftVelocityRequest.Velocity);
+        Subsystems.telemetry.pushDouble("drive_rightVelocityTarget", rightVelocityRequest.Velocity);
     }
 
     public void coast() {
@@ -163,8 +163,8 @@ public class DifferentialDrive implements IPeriodicTask{
     public void brake() {
         Hardware.leftDriveLeader.setNeutralMode(NeutralModeValue.Brake);
         Hardware.rightDriveLeader.setNeutralMode(NeutralModeValue.Brake);
-        Hardware.leftDriveLeader.setControl(new StaticBrake());
-        Hardware.rightDriveLeader.setControl(new StaticBrake());
+        Hardware.leftDriveLeader.setControl(new NeutralOut());
+        Hardware.rightDriveLeader.setControl(new NeutralOut());
         mode = DriveMode.none;
     }
 
