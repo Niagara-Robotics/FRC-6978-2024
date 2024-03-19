@@ -3,7 +3,6 @@ package frc.robot.Tasks;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
@@ -121,8 +120,7 @@ public class Tracking implements IPeriodicTask {
     }
 
     public void fuseCameraPose(Pose2d cameraPose, long frame_timestamp) {
-        Stack<OdometrySnapshot> tempSnapshots = new Stack<OdometrySnapshot>();
-        tempSnapshots.addAll(odometrySnapshots);
+        LinkedList<OdometrySnapshot> tempSnapshots = (LinkedList<OdometrySnapshot>)odometrySnapshots.clone();
         if(tempSnapshots.size() < 1) {
             odometry.resetPosition(
                 Hardware.navX.getRotation2d(), 
@@ -148,7 +146,7 @@ public class Tracking implements IPeriodicTask {
                 rightPosition.getValue() * Constants.Drive.rotorToMeters,
                 cameraPose);
                 lastCameraCorrection = System.nanoTime();
-            Subsystems.telemetry.pushBoolean("tracking.", false);
+            Subsystems.telemetry.pushBoolean("tracking_resetFusion", true);
             return;
         }
 
@@ -168,6 +166,7 @@ public class Tracking implements IPeriodicTask {
             numFusedSnapshots++;
         }
         Subsystems.telemetry.pushDouble("tracking.numFusedSnapshots", numFusedSnapshots);
+        Subsystems.telemetry.pushBoolean("tracking_resetFusion", false);
         lastCameraCorrection = System.nanoTime();
     }
 
@@ -225,7 +224,7 @@ public class Tracking implements IPeriodicTask {
             cameraPosePublisher.set(cameraPose);
             if(frame.values.get(5) > 0 && frame.values.get(4) < 1.25 && (frame.values.get(2) < Constants.Tracking.zClamp) && frame.values.get(7) > Constants.Tracking.minCornerDist) { //require at least 2 tags
                 synchronized(odometry) {
-                    fuseCameraPose(cameraPose, frame.timestamp - 300000000);
+                    fuseCameraPose(cameraPose, frame.timestamp /*- 300000000*/);
                 }
             }
         });
@@ -259,6 +258,8 @@ public class Tracking implements IPeriodicTask {
         Subsystems.telemetry.pushDouble("tracking_odometryRadians", odometry.getPoseMeters().getRotation().getRadians());
         Subsystems.telemetry.pushDouble("tracking_leftPosition", leftPosition.getValue());
         Subsystems.telemetry.pushDouble("tracking_rightPosition", rightPosition.getValue());
+        Subsystems.telemetry.pushDouble("tracking_leftVelocity", leftVelocity.getValue());
+        Subsystems.telemetry.pushDouble("tracking_rightVelocity", rightVelocity.getValue());
         Subsystems.telemetry.pushDouble("tracking_theta", getFieldRelativeRotation().getDegrees());
         Subsystems.telemetry.pushDouble("tracking_omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRate()));
         Subsystems.telemetry.pushBoolean("tracking_poseGood", poseGood());
