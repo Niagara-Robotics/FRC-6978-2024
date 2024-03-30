@@ -21,14 +21,9 @@ public class Illumination {
         setLength((byte)1, (byte)24);
         setLength((byte)2, (byte)24);
         setLength((byte)3, (byte)24);
-
-
-        setStatic((byte)1, 0, 255, 255);
-        //setStatic((byte)0, 0, 255, 255);
+        
         setBreathing((byte)0, (short)3000, 0, 80, 0);
         setBreathing((byte)1, (short)3000, 0, 80, 0);
-        //setBreathing((byte)2, (short)6000, 0, 100, 0);
-        //setBreathing((byte)3, (short)1000, 0, 100, 0);
 
         //Color8Bit idleColor = new Color8Bit(120, 0, 0);
 
