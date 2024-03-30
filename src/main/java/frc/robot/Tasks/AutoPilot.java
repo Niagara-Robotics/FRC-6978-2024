@@ -88,6 +88,7 @@ public class AutoPilot implements IPeriodicTask {
         currentMode = AutoPilotMode.facePoint;
         alignmentController.init();
         driveHandle.takeControl(false);
+        hitPoint = false;
     }
 
     public void driveToPoint() {
@@ -123,6 +124,10 @@ public class AutoPilot implements IPeriodicTask {
         Subsystems.telemetry.pushDouble("autoPilot_angleDelta", angleDelta);
 
         double angularVelocity = alignmentController.process(angleDelta);
+
+        if(Math.abs(angularVelocity) < Constants.AutoPilot.angularVelocityThreshold) {
+            angularVelocity = 0;
+        }
 
         double linearVelocityCap = 1 - (Math.abs(angleDelta) / Constants.AutoPilot.deltaStopPoint);
         if(linearVelocityCap < 0) linearVelocityCap = 0;
