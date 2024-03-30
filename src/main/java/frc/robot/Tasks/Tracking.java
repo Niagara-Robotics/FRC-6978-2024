@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.PoseStreamerClient;
 import frc.robot.Framework.RunContext;
@@ -145,7 +146,7 @@ public class Tracking implements IPeriodicTask {
                 leftPosition.getValue() * Constants.Drive.rotorToMeters,
                 rightPosition.getValue() * Constants.Drive.rotorToMeters,
                 cameraPose);
-                lastCameraCorrection = System.nanoTime();
+            lastCameraCorrection = System.nanoTime();
             Subsystems.telemetry.pushBoolean("tracking_resetFusion", true);
             return;
         }
@@ -272,6 +273,17 @@ public class Tracking implements IPeriodicTask {
             updateOdometry();
         }
         fusedPosePublisher.set(odometry.getPoseMeters());
+
+        //lights to tell technicians whether the robot can see the tags
+        if(DriverStation.isFMSAttached() && DriverStation.isDisabled() && DriverStation.getMatchTime() > 10) {
+            if((System.nanoTime() - lastCameraCorrection) < 150000000) {
+                Subsystems.illumination.setStatic((byte)0, 0, 90, 0);
+                Subsystems.illumination.setStatic((byte)1, 0, 90, 0);
+            } else {
+                Subsystems.illumination.setStatic((byte)0, 90, 00, 0);
+                Subsystems.illumination.setStatic((byte)1, 90, 00, 0);
+            }
+        }
     }
 
     public void onStop() {}
