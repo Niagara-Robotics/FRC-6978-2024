@@ -24,10 +24,10 @@ public class OperatorInput implements IPeriodicTask {
 
     public void onLoop(RunContext ctx) {
         if(Hardware.operatorStick.getRawButtonPressed(Constants.OperatorControls.configureSubShotButton)) {
-            Subsystems.autoShot.setupSpeakerShot(1350.0);
+            Subsystems.autoShot.setupSpeakerShot(1.350);
         }
         if(Hardware.operatorStick.getRawButtonPressed(Constants.OperatorControls.configurePodiumShotButton)) {
-            Subsystems.autoShot.setupSpeakerShot(2500);
+            Subsystems.autoShot.setupSpeakerShot(2.500);
         }
     }
 
