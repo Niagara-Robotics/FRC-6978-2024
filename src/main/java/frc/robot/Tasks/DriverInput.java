@@ -85,7 +85,7 @@ public class DriverInput implements IPeriodicTask {
         }
     }
 
-    public void useGuestStick() {
+    /*public void useGuestStick() {
         double x = Hardware.guestStick.getRawAxis(Constants.DriverControls.steeringAxis);
         double y = (Hardware.guestStick.getRawAxis(Constants.DriverControls.forwardAxis) + 1 )/2 - 
             (Hardware.guestStick.getRawAxis(Constants.DriverControls.reverseAxis) + 1 )/2;
@@ -97,7 +97,7 @@ public class DriverInput implements IPeriodicTask {
         } else if (Hardware.guestStick.getRawButtonReleased(Constants.OperatorControls.launcherButton)) {
             Subsystems.launcher.stopLauncher();
         }
-    }
+    }*/
     
     
     public List<RunContext> getAllowedRunContexts() { 
@@ -117,16 +117,7 @@ public class DriverInput implements IPeriodicTask {
 
     public void onLoop(RunContext ctx) {
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.transferControlButton)) {
-            if(guestActive) {
-                Subsystems.launcher.stopLauncher();
-                Subsystems.intake.idleIntake();
-                guestActive = false;
-            } else {
-                Subsystems.launcher.stopLauncher();
-                Subsystems.intake.idleIntake();
-                guestActive = true;
-            }
-            Subsystems.telemetry.pushBoolean("driverHasControl", !guestActive);
+            Subsystems.autoShot.spitNote();
         }
 
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.autoAlignButton)) {
@@ -153,7 +144,7 @@ public class DriverInput implements IPeriodicTask {
         }
         
         if(guestActive) {
-            useGuestStick();
+            //useGuestStick();
         } else {
             useMainDriverStick();
         }
@@ -163,17 +154,9 @@ public class DriverInput implements IPeriodicTask {
         if(Hardware.driverStick.getRawButtonPressed(1)) {
             tiltHandle.takeControl(false);
             tiltHandle.set(-0.1);
-
-            if(RandomGenerator.getDefault().nextDouble() > 0.98) {
-                System.out.println("Parked tile mechanism");
-                System.out.println("*tilte");
-                System.out.println("*tilt");
-                System.out.println("damn autocorrect");
-            } else {
-                System.out.println("Parked tilt mechanism");
-            }
         } else if (Hardware.driverStick.getRawButtonPressed(4)) {
-            tiltHandle.set(0.023);
+            tiltHandle.takeControl(false);
+            tiltHandle.set(0.0);
         }
 
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.ampShotButton)) {

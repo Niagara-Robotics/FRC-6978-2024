@@ -26,7 +26,10 @@ public class AutoShot implements IPeriodicTask {
     //ParameterHandle<ChassisSpeeds> driveHandle;
 
     private boolean waitingToLaunch;
+    private boolean waitingForFinish;
     private boolean waitingForAmpWhisker;
+    private boolean continuousAdjustment;
+    private boolean alignBypass;
     private double redSpeakerX = 16579.34 / 1000.0;
     private double blueSpeakerX = 0.0;
 
@@ -61,6 +64,8 @@ public class AutoShot implements IPeriodicTask {
         redAlliance = true;
 
         SmartDashboard.putNumber("autoShot_angleOffset", 0.0);
+        SmartDashboard.putNumber("autoShot_ampTiltPosition", Constants.Launcher.ampTiltPosition);
+        SmartDashboard.putNumber("autoShot_trapTiltPosition", Constants.Launcher.trapTiltPosition);
     }
 
     public List<RunContext> getAllowedRunContexts() { 
@@ -139,7 +144,7 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void setupAmpShot() {
-        setupShot(Constants.Launcher.ampTiltPosition, Constants.Launcher.ampVelocity);
+        setupShot(SmartDashboard.getNumber("autoShot_ampTiltPosition", Constants.Launcher.ampTiltPosition), Constants.Launcher.ampVelocity);
 
         if(redAlliance) {
             ampPose = Constants.AutoShot.redAmpPose;
@@ -149,9 +154,9 @@ public class AutoShot implements IPeriodicTask {
 
         Pose2d whiskerPose = calculateWhisker(ampPose, Constants.AutoShot.ampSecondWhiskerLength);
 
-        Subsystems.autoPilot.setTarget(whiskerPose, true);
-        Subsystems.autoPilot.driveToPoint();
-        waitingForAmpWhisker = true;
+        //Subsystems.autoPilot.setTarget(whiskerPose, true);
+        //Subsystems.autoPilot.driveToPoint();
+        //waitingForAmpWhisker = true;
     }
 
     private Pose2d closestTrap() {
@@ -185,7 +190,7 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void setupTrapShot() {
-        setupShot(Constants.Launcher.trapTiltPosition, Constants.Launcher.trapVelocity);
+        setupShot(SmartDashboard.getNumber("autoShot_trapTiltPosition", Constants.Launcher.trapTiltPosition), Constants.Launcher.trapVelocity);
 
         Pose2d trapPose = closestTrap();
 
@@ -199,36 +204,23 @@ public class AutoShot implements IPeriodicTask {
 
         Subsystems.autoPilot.setTarget(whiskerPose, true);
         Subsystems.autoPilot.driveToPoint();
+        alignBypass= false;
     }
 
     public void fireWhenReady() {
         waitingToLaunch = true;
     }
 
+    public void spitNote() {
+        setupShot(0.2, Constants.AutoShot.spitVelocity);
+        //fireWhenReady();
+        Subsystems.launcher.launchNote();
+        waitingForFinish = true;
+        continuousAdjustment = false;
+        alignBypass = true;
+    }
+
     public void fullAutoLaunch() {
-        targetX = speakerX;
-        targetY = redSpeakerY;
-        setupSpeakerShot(distance(targetX, targetY));
-        Subsystems.autoPilot.setTarget(new Pose2d(speakerX, redSpeakerY, new Rotation2d()), true);
-        Subsystems.autoPilot.facePoint();
-        fireWhenReady();
-    }
-
-    public void cancelAutoLaunch() {
-        waitingToLaunch = false;
-        Subsystems.launcher.stopLauncher();
-        Subsystems.autoPilot.disable();
-    }
-
-    public void onStart(RunContext ctx) {
-        waitingToLaunch = false;
-    }
-
-    public boolean finished() {
-        return !waitingToLaunch;
-    }
-
-    public void onLoop(RunContext ctx) {
         var alliance = DriverStation.getAlliance();
         if(alliance.isPresent()) {
             if(alliance.get() == Alliance.Red) {
@@ -239,18 +231,60 @@ public class AutoShot implements IPeriodicTask {
                 redAlliance = false;
             }
         }
+        targetX = speakerX;
+        targetY = redSpeakerY;
+        setupSpeakerShot(distance(targetX, targetY));
+        Subsystems.autoPilot.setTarget(new Pose2d(speakerX, redSpeakerY, new Rotation2d()), true);
+        Subsystems.autoPilot.facePoint();
+        fireWhenReady();
+        continuousAdjustment = true;
+        alignBypass = false;
+    }
+
+    public void cancelAutoLaunch() {
+        waitingToLaunch = false;
+        Subsystems.launcher.stopLauncher();
+        Subsystems.autoPilot.disable();
+    }
+
+    public void onStart(RunContext ctx) {
+        waitingToLaunch = false;
+        waitingForFinish = false;
+        continuousAdjustment = false;
+    }
+
+    public boolean finished() {
+        return !waitingToLaunch;
+    }
+
+    public void onLoop(RunContext ctx) {
+        var alliance = DriverStation.getAlliance();
+        if(alliance.isPresent()) {
+            if(alliance.get() == Alliance.Red) {
+                redAlliance = true;
+            } else {
+                redAlliance = false;
+            }
+        }
 
         if(waitingToLaunch) {
-            setupSpeakerShot((distance(targetX, targetY)));
-            if(aligned() && Subsystems.launcher.tiltFinished()) {
+            if(continuousAdjustment) {
+                setupSpeakerShot((distance(targetX, targetY)));
+            }
+            if((aligned() || alignBypass) && Subsystems.launcher.tiltFinished()) {
                 Subsystems.launcher.launchNote();
+                waitingForFinish = true;
             } 
+        }
+
+        if(waitingForFinish) {
             if(Subsystems.launcher.finished()) {
                 cancelAutoLaunch();
                 Subsystems.illumination.setStatic((byte)0, 0, 130, 0);
                 if(Constants.AutoShot.dropTiltAfterSpeakerShot) {
                     launcherTiltHandle.set(Constants.Launcher.tiltDefaultPosition);
                 }
+                waitingForFinish = false;
             }
         }
 
@@ -270,6 +304,8 @@ public class AutoShot implements IPeriodicTask {
     public void publishTelemetry() {
         Subsystems.telemetry.pushBoolean("autoShot_aligned", aligned());
         Subsystems.telemetry.pushDouble("autoShot_distance", distance(targetX, targetY));
+        Subsystems.telemetry.pushDouble("autoShot_dX", Math.abs(targetX - (Subsystems.tracking.odometry.getPoseMeters().getX())));
+        Subsystems.telemetry.pushDouble("autoShot_dY", Math.abs(targetY - (Subsystems.tracking.odometry.getPoseMeters().getY())));
         //Subsystems.telemetry.pushDouble("autoShot_tiltVal", linearInterpolate(Constants.AutoShot.tiltMap, distance()));
         Subsystems.telemetry.pushDouble("autoShot_angleToTarget", angleToTarget());
     }
