@@ -11,12 +11,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
-import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.SPI.Port;
 
 public class Hardware {
@@ -40,13 +37,12 @@ public class Hardware {
     public static TalonSRX intakeFloorRoller = new TalonSRX(10);
     public static TalonSRX liftMotor = new TalonSRX(11);
     public static TalonSRX secondaryLiftMotor = new TalonSRX(12);
+    public static TalonSRX tertiaryLiftMotor = new TalonSRX(13);
+    public static TalonSRX quaternaryLiftMotor = new TalonSRX(14);
 
     public static TalonFX intakeIndexerRoller = new TalonFX(40);
 
     //Pneumatics
-    public static Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
-    public static Solenoid driveGearShiftSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 0);
-    public static Solenoid gripperSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 1);
 
     public static DigitalInput liftSensor = new DigitalInput(0);
     public static DigitalInput indexSensor = new DigitalInput(1);
@@ -56,7 +52,7 @@ public class Hardware {
     //Human input devices
     public static Joystick driverStick = new Joystick(0);
     public static Joystick operatorStick = new Joystick(1);
-    public static Joystick guestStick = new Joystick(2);
+    //public static Joystick guestStick = new Joystick(2);
 
     public static DifferentialDriveKinematics kinematics;
 
@@ -155,6 +151,9 @@ public class Hardware {
         liftMotor.config_kF(0, Constants.Lift.kF);
         liftMotor.config_kP(0, Constants.Lift.kP);
 
+        //liftMotor.configContinuousCurrentLimit(25)
+
         secondaryLiftMotor.set(ControlMode.Follower, 11);
+        quaternaryLiftMotor.setInverted(true);
     }
 }

@@ -10,6 +10,8 @@ import java.util.List;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
+import edu.wpi.first.wpilibj.DriverStation;
+
 import java.util.ArrayList;
 
 
@@ -33,15 +35,23 @@ public class Lift implements IPeriodicTask {
     }
 
     public void onLoop(RunContext ctx) {
-        if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbUpButton) && !beyondCatchPoint()) {
-            Hardware.liftMotor.set(ControlMode.Velocity, Constants.Lift.velocity);
-            //Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.power);
-        } else if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbReleaseButton) && !beyondCatchPoint()) {
-            Hardware.liftMotor.set(ControlMode.PercentOutput, -Constants.Lift.power);
-            //Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, -Constants.Lift.power);
+        if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbUpButton) /*&& !beyondCatchPoint()*/) {
+            //Hardware.liftMotor.set(ControlMode.Velocity, Constants.Lift.velocity);
+            Hardware.liftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
+            Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
+            Hardware.tertiaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
+            Hardware.quaternaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
+        } else if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbReleaseButton) /*&& !beyondCatchPoint()*/) {
+            //Hardware.liftMotor.set(ControlMode.PercentOutput, -Constants.Lift.power);
+            Hardware.liftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
+            Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
+            Hardware.tertiaryLiftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
+            Hardware.quaternaryLiftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
         } else {
             Hardware.liftMotor.set(ControlMode.Disabled, 0);
-            //Hardware.secondaryLiftMotor.set(ControlMode.Disabled, 0);
+            Hardware.secondaryLiftMotor.set(ControlMode.Disabled, 0);
+            Hardware.tertiaryLiftMotor.set(ControlMode.Disabled, 0);
+            Hardware.quaternaryLiftMotor.set(ControlMode.Disabled, 0);
         }
     }
 
