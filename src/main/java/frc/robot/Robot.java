@@ -15,7 +15,7 @@ public class Robot extends TimedRobot{
     Timer loopTimer;
 
     public Robot() {
-        super(0.005);
+        super(0.007);
     }
     
     @Override
@@ -87,7 +87,6 @@ public class Robot extends TimedRobot{
     public void disabledInit() {
         Schedulers.teleopScheduler.clear();
         Schedulers.autoScheduler.clear();
-
         var alliance = DriverStation.getAlliance();
         if(alliance.isPresent()) {
             if(alliance.get() == Alliance.Red) {
