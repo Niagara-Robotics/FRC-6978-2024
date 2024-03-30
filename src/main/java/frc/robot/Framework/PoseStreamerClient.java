@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import frc.robot.Platform.Subsystems;
@@ -254,7 +255,7 @@ public class PoseStreamerClient extends Thread {
     public void run() {
         requestid = 0;
         while(true) {
-            if((System.nanoTime() - lastHeartBeatReceive) > 1000000000) {
+            if((System.nanoTime() - lastHeartBeatReceive) > 3000000000l) {
                 connected = false;
             }
             Subsystems.telemetry.pushBoolean("poseStreamer_connected", connected);
@@ -299,8 +300,11 @@ public class PoseStreamerClient extends Thread {
                     awaiting_clock_request = false;
                 }
             } catch (Exception i) {
-                connected = false;
+                if(i.getClass().equals(NoSuchElementException.class)) continue;
                 System.out.println("disconnecting");
+                System.out.println(i.toString());
+                System.out.println(i.getMessage());
+                connected = false;
             }
             try {
                         sleep(1);
