@@ -19,7 +19,7 @@ public class Lift implements IPeriodicTask {
     
     public boolean beyondCatchPoint() {
         //return Hardware.liftMotor.getSelectedSensorPosition() > Constants.Lift.catchPoint;
-        return Hardware.liftSensor.get();
+        return !Hardware.liftSensor.get();
     }
 
     public List<RunContext> getAllowedRunContexts() { 
@@ -35,13 +35,13 @@ public class Lift implements IPeriodicTask {
     }
 
     public void onLoop(RunContext ctx) {
-        if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbUpButton) /*&& !beyondCatchPoint()*/) {
+        if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbUpButton) && !beyondCatchPoint()) {
             //Hardware.liftMotor.set(ControlMode.Velocity, Constants.Lift.velocity);
             Hardware.liftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
             Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
             Hardware.tertiaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
             Hardware.quaternaryLiftMotor.set(ControlMode.PercentOutput, Constants.Lift.powerUp);
-        } else if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbReleaseButton) /*&& !beyondCatchPoint()*/) {
+        } else if(Hardware.operatorStick.getRawButton(Constants.OperatorControls.climbReleaseButton) && !beyondCatchPoint()) {
             //Hardware.liftMotor.set(ControlMode.PercentOutput, -Constants.Lift.power);
             Hardware.liftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
             Hardware.secondaryLiftMotor.set(ControlMode.PercentOutput, -Constants.Lift.powerDown);
@@ -59,7 +59,7 @@ public class Lift implements IPeriodicTask {
         // TODO Auto-generated method stub
         Subsystems.telemetry.pushDouble("lift_position", Hardware.liftMotor.getSelectedSensorPosition());
         Subsystems.telemetry.pushDouble("lift_velocity", Hardware.liftMotor.getSelectedSensorVelocity());
-        Subsystems.telemetry.pushBoolean("lift_limitSwitch", Hardware.liftSensor.get());
+        Subsystems.telemetry.pushBoolean("lift_limitSwitch", beyondCatchPoint());
     }
 
     public void onStop() {
