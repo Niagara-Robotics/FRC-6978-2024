@@ -81,6 +81,9 @@ public class TwoSidedLauncher implements IPeriodicTask {
         tiltCalibrationComplete = false;
 
         tiltCalibrationTimer = new Timer();
+
+        Hardware.leftLauncherStage1.getSupplyCurrent().setUpdateFrequency(150);
+        Hardware.leftLauncherStage2.getSupplyCurrent().setUpdateFrequency(150);
     }
 
     public void launchNote() {
@@ -177,7 +180,7 @@ public class TwoSidedLauncher implements IPeriodicTask {
         lastTiltTargetTS = System.nanoTime();
 
         if(!tiltCalibrationComplete) {
-            Hardware.launcherTiltMotor.setControl(new VoltageOut(0.3));
+            Hardware.launcherTiltMotor.setControl(new VoltageOut(0.35));
             tiltCalibrationTimer.reset();
             tiltCalibrationTimer.start();
         }

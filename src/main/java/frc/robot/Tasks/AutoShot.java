@@ -65,7 +65,9 @@ public class AutoShot implements IPeriodicTask {
 
         SmartDashboard.putNumber("autoShot_angleOffset", 0.0);
         SmartDashboard.putNumber("autoShot_ampTiltPosition", Constants.Launcher.ampTiltPosition);
+        SmartDashboard.putNumber("autoShot_ampVelocity", Constants.Launcher.ampVelocity);
         SmartDashboard.putNumber("autoShot_trapTiltPosition", Constants.Launcher.trapTiltPosition);
+        SmartDashboard.putNumber("autoShot/passTilt", Constants.AutoShot.passTilt);
     }
 
     public List<RunContext> getAllowedRunContexts() { 
@@ -77,7 +79,8 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public boolean aligned() {
-        return Math.abs(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians() - angleToTarget()) < 0.1;
+        //return Math.abs(Subsystems.tracking.odometry.getPoseMeters().getRotation().getRadians() - angleToTarget()) < 0.1;
+        return Subsystems.autoPilot.finished();
     }
 
     public double distance(double x, double y) {
@@ -144,7 +147,7 @@ public class AutoShot implements IPeriodicTask {
     }
 
     public void setupAmpShot() {
-        setupShot(SmartDashboard.getNumber("autoShot_ampTiltPosition", Constants.Launcher.ampTiltPosition), Constants.Launcher.ampVelocity);
+        setupShot(SmartDashboard.getNumber("autoShot_ampTiltPosition", Constants.Launcher.ampTiltPosition), SmartDashboard.getNumber("autoShot_ampVelocity", Constants.Launcher.ampVelocity));
 
         if(redAlliance) {
             ampPose = Constants.AutoShot.redAmpPose;
@@ -156,7 +159,7 @@ public class AutoShot implements IPeriodicTask {
 
         //Subsystems.autoPilot.setTarget(whiskerPose, true);
         //Subsystems.autoPilot.driveToPoint();
-        //waitingForAmpWhisker = true;
+        waitingForAmpWhisker = true;
     }
 
     private Pose2d closestTrap() {
@@ -241,6 +244,18 @@ public class AutoShot implements IPeriodicTask {
         alignBypass = false;
     }
 
+    public void autoPass() {
+        Subsystems.autoPilot.setTarget((redAlliance)? Constants.AutoShot.redPassPose: Constants.AutoShot.bluePassPose, true);
+        Subsystems.autoPilot.facePoint();
+        alignBypass = false;
+    }
+
+    public void passNote() {
+        setupShot(SmartDashboard.getNumber("autoShot/passTilt", Constants.AutoShot.passTilt), Constants.AutoShot.passVelocity);
+        fireWhenReady();
+        continuousAdjustment = false;
+    }
+
     public void cancelAutoLaunch() {
         waitingToLaunch = false;
         Subsystems.launcher.stopLauncher();
@@ -280,7 +295,7 @@ public class AutoShot implements IPeriodicTask {
         if(waitingForFinish) {
             if(Subsystems.launcher.finished()) {
                 cancelAutoLaunch();
-                Subsystems.illumination.setStatic((byte)0, 0, 130, 0);
+                Subsystems.illumination.setStatic((byte)0, 0, 0, 0);
                 if(Constants.AutoShot.dropTiltAfterSpeakerShot) {
                     launcherTiltHandle.set(Constants.Launcher.tiltDefaultPosition);
                 }
@@ -293,7 +308,7 @@ public class AutoShot implements IPeriodicTask {
                 Pose2d secondStagePose = calculateWhisker(ampPose, Constants.AutoShot.ampWhiskerLength);
                 Subsystems.autoPilot.disable();
                 Subsystems.autoPilot.setTarget(secondStagePose, true);
-                Subsystems.autoPilot.driveToPoint();
+                Subsystems.autoPilot.facePoint();
                 waitingForAmpWhisker = false;
             }
         }

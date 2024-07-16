@@ -4,7 +4,7 @@ import frc.robot.Framework.IPeriodicTask;
 
 public class Tasks {
     public static IPeriodicTask[] telemetryTasks = {
-        (IPeriodicTask)Subsystems.differentialDrive,
+        (IPeriodicTask)Subsystems.drive,
         (IPeriodicTask)Subsystems.intake,
         (IPeriodicTask)Subsystems.launcher,
         (IPeriodicTask)Subsystems.driverInput,
@@ -15,23 +15,23 @@ public class Tasks {
     };
     
     public static IPeriodicTask[] teleopTasks = {
-        (IPeriodicTask)Subsystems.differentialDrive,
-        (IPeriodicTask)Subsystems.intake,
-        (IPeriodicTask)Subsystems.launcher,
+        (IPeriodicTask)Subsystems.drive,
+        //(IPeriodicTask)Subsystems.intake,
+        //(IPeriodicTask)Subsystems.launcher,
         (IPeriodicTask)Subsystems.driverInput,
-        (IPeriodicTask)Subsystems.autoShot,
-        (IPeriodicTask)Subsystems.lift,
-        (IPeriodicTask)Subsystems.operatorInput,
-        (IPeriodicTask)Subsystems.autoPilot
+        //(IPeriodicTask)Subsystems.autoShot,
+        //(IPeriodicTask)Subsystems.lift,
+        //(IPeriodicTask)Subsystems.operatorInput,
+        //(IPeriodicTask)Subsystems.autoPilot
     };
 
     public static IPeriodicTask[] autonomousTasks = {
-        (IPeriodicTask)Subsystems.differentialDrive,
-        (IPeriodicTask)Subsystems.intake,
-        (IPeriodicTask)Subsystems.auto,
-        (IPeriodicTask)Subsystems.launcher,
-        (IPeriodicTask)Subsystems.autoShot,
-        (IPeriodicTask)Subsystems.autoPilot,
+        (IPeriodicTask)Subsystems.drive,
+        //(IPeriodicTask)Subsystems.intake,
+        //(IPeriodicTask)Subsystems.auto,
+        //(IPeriodicTask)Subsystems.launcher,
+        //(IPeriodicTask)Subsystems.autoShot,
+        //(IPeriodicTask)Subsystems.autoPilot,
     };
 
     public static IPeriodicTask[] idleTasks = {

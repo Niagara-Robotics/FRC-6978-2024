@@ -99,8 +99,8 @@ public class Intake implements IPeriodicTask{
     public boolean intakeFinished() {
         if(currentState.hasNote) return true;
         else if(currentState.indexSensor) {
-            Subsystems.illumination.setStatic((byte)0, 0, 180, 0);
-            Subsystems.illumination.setStatic((byte)1, 0, 180, 0);
+            Subsystems.illumination.setBreathing(0, (short)1000, 0, 180, 0);
+            Subsystems.illumination.setBreathing(1, (short)1000, 0, 180, 0);
             Subsystems.telemetry.pushEvent("intake.finished");
             idleIntake();
             currentState.hasNote = true;

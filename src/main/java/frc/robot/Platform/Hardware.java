@@ -14,17 +14,20 @@ import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.SPI.Port;
 
 public class Hardware {
     //Gyro
     public static AHRS navX = new AHRS(Port.kMXP, (byte)200);
 
+    public static PowerDistribution PDH = new PowerDistribution();
+
     //Drive Motors
-    public static TalonFX leftDriveLeader = new TalonFX(1, "rio");
-    public static TalonFX leftDrive2 = new TalonFX(2, "rio");
-    public static TalonFX rightDriveLeader = new TalonFX(3, "rio");
-    public static TalonFX rightDrive2 = new TalonFX(4, "rio");
+    //public static TalonFX leftDriveLeader = new TalonFX(1, "rio");
+    //public static TalonFX leftDrive2 = new TalonFX(2, "rio");
+    //public static TalonFX rightDriveLeader = new TalonFX(3, "rio");
+    //public static TalonFX rightDrive2 = new TalonFX(4, "rio");
 
     public static TalonFX leftLauncherStage1 = new TalonFX(21);
     public static TalonFX leftLauncherStage2 = new TalonFX(20);
@@ -57,46 +60,6 @@ public class Hardware {
     public static DifferentialDriveKinematics kinematics;
 
     public static void configureHardware() {
-        //Drive motors
-        leftDriveLeader.setInverted(false);
-        //leftDrive2.setInverted(false);
-        rightDriveLeader.setInverted(true);
-        //rightDrive2.setInverted(false);
-
-        leftDrive2.setControl(new Follower(1, false));
-        rightDrive2.setControl(new Follower(3, false));
-
-        TalonFXConfiguration leftDriveConfiguration = new TalonFXConfiguration();
-        TalonFXConfiguration rightDriveConfiguration = new TalonFXConfiguration();
-
-        leftDriveConfiguration.Slot0.kP = Constants.Drive.kP;
-        leftDriveConfiguration.Slot0.kI = Constants.Drive.kI;
-        leftDriveConfiguration.Slot0.kD = Constants.Drive.kD;
-        leftDriveConfiguration.Slot0.kV = Constants.Drive.kVleft;
-        leftDriveConfiguration.Slot0.kS = Constants.Drive.kSleft;
-        leftDriveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-        leftDriveConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
-        leftDriveConfiguration.CurrentLimits.SupplyCurrentLimit = Constants.Drive.supplyCurrentLimit;
-
-        rightDriveConfiguration.Slot0.kP = Constants.Drive.kP;
-        rightDriveConfiguration.Slot0.kI = Constants.Drive.kI;
-        rightDriveConfiguration.Slot0.kD = Constants.Drive.kD;
-        rightDriveConfiguration.Slot0.kV = Constants.Drive.kVright;
-        rightDriveConfiguration.Slot0.kS = Constants.Drive.kSright;
-        rightDriveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-        rightDriveConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        rightDriveConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
-        rightDriveConfiguration.CurrentLimits.SupplyCurrentLimit = Constants.Drive.supplyCurrentLimit;
-        //rightDriveConfiguration.CurrentLimits.SupplyCurrentThreshold = Constants.Drive.supplyCurrentLimit;
-
-        leftDriveLeader.getConfigurator().apply(leftDriveConfiguration);
-        rightDriveLeader.getConfigurator().apply(rightDriveConfiguration);
-
-        leftDrive2.getConfigurator().apply(leftDriveConfiguration);
-        rightDrive2.getConfigurator().apply(rightDriveConfiguration);
-
-        leftDriveLeader.setPosition(0);
-        rightDriveLeader.setPosition(0);
 
         TalonFXConfiguration launcherConfiguration = new TalonFXConfiguration();
         launcherConfiguration.Slot0.kP = Constants.Launcher.kP;

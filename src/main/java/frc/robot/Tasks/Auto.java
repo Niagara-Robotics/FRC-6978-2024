@@ -37,7 +37,7 @@ public class Auto implements IPeriodicTask {
             
         };
 
-        driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("autonomous");
+        driveHandle = Subsystems.drive.wantedChassisSpeeds.getHandle("autonomous");
 
         AutoBuilder.configureRamsete(
                 () -> Subsystems.tracking.getPose(), // Robot pose supplier
@@ -106,6 +106,6 @@ public class Auto implements IPeriodicTask {
     public void onStop() {
         driveHandle.release();
         testAuto.end(true);
-        Subsystems.differentialDrive.coast();
+        //Subsystems.differentialDrive.coast();
     }
 }

@@ -2,10 +2,10 @@ package frc.robot.Platform;
 
 import frc.robot.Tasks.Lift;
 import frc.robot.Tasks.OperatorInput;
+import frc.robot.Tasks.SwerveDrive;
 import frc.robot.Tasks.AutoPilot;
 import frc.robot.Tasks.Auto;
 import frc.robot.Tasks.AutoShot;
-import frc.robot.Tasks.DifferentialDrive;
 import frc.robot.Tasks.DriverInput;
 import frc.robot.Tasks.Illumination;
 import frc.robot.Tasks.Intake;
@@ -21,7 +21,7 @@ public class Subsystems {
     public static Intake intake = new Intake();
     public static OperatorInput operatorInput = new OperatorInput();
     public static TwoSidedLauncher launcher = new TwoSidedLauncher();
-    public static DifferentialDrive differentialDrive = new DifferentialDrive();
+    public static SwerveDrive drive = new SwerveDrive();
     public static Lift lift = new Lift();
     public static Tracking tracking = new Tracking();
     

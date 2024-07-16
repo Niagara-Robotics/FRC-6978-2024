@@ -2,6 +2,13 @@ package frc.robot.Platform;
 
 import java.util.HashMap;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.VoltageConfigs;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 
@@ -32,9 +39,88 @@ public class Constants {
         public static double deadZone = 0.1;
     }
 
+    public static class SwerveDrive {
+        public static Slot0Configs driveGains = new Slot0Configs()
+            .withKP(1.0).withKI(0).withKP(0)
+            .withKS(0).withKV(1.5).withKA(0);
+
+        public static Slot0Configs steerGains = new Slot0Configs()
+            .withKP(1.0).withKI(0).withKP(0)
+            .withKS(0).withKV(0).withKA(0);
+
+        public static ClosedLoopOutputType steerClosedLoopOutputType = ClosedLoopOutputType.Voltage;
+        public static ClosedLoopOutputType driveClosedLoopOutputType = ClosedLoopOutputType.Voltage;
+
+        public static double slipCurrent = 60;
+
+        public static VoltageConfigs driveVoltageConfigs = new VoltageConfigs()
+            .withPeakForwardVoltage(0.3)
+            .withPeakReverseVoltage(0.3);
+
+        public static TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration()
+            .withVoltage(driveVoltageConfigs);
+        public static TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                .withStatorCurrentLimit(60)
+                .withStatorCurrentLimitEnable(true)
+            )
+            .withVoltage(driveVoltageConfigs);
+        public static CANcoderConfiguration cancoderInitialConfigs = new CANcoderConfiguration();
+
+        public static double freeSpeedAt12Volts = 5.39;
+
+        public static double coupleRatio = 2.7; //drive rotor/azimuth rotation
+
+        public static double driveGearRatio = 5.9;
+        public static double steerGearRatio = 18.75;
+        public static double wheelRadius = 2; //inches
+
+        public static boolean steeringInvert = false;
+        public static boolean invertLeftSide = false;
+        public static boolean invertRightSide = true;
+
+        public static String CANBusName = "drive";
+
+        public static int frontLeftDriveId = 0;
+        public static int frontLeftSteerId = 1;
+        public static int frontLeftEncoderId = 0;
+
+        public static double frontLeftencoderOffset = 0.0676;
+        public static double frontLeftPositionX = 0.31;
+        public static double frontLeftPositionY = 0.31;
+
+        public static int frontRightDriveId = 2;
+        public static int frontRightSteerId = 3;
+        public static int frontRightEncoderId = 1;
+
+        public static double frontRightencoderOffset = 0.024;
+        public static double frontRightPositionX = 0.31;
+        public static double frontRightPositionY = -0.31;
+
+        public static int backLeftDriveId = 4;
+        public static int backLeftSteerId = 5;
+        public static int backLeftEncoderId = 2;
+
+        public static double backLeftencoderOffset = -0.053;
+        public static double backLeftPositionX = -0.31;
+        public static double backLeftPositionY = -0.31;
+
+        public static int backRightDriveId = 6;
+        public static int backRightSteerId = 7;
+        public static int backRightEncoderId = 3;
+
+        public static double backRightencoderOffset = -0.106;
+        public static double backRightPositionX = -0.31;
+        public static double backRightPositionY = 0.31;
+
+        
+    }
+
     public static class Tracking {
         public static double zClamp = 620;
-        public static double minCornerDist = 19;
+        public static double minCornerDistSingle = 18;
+        public static double minCornerDistMulti = 13;
     }
 
     public static class Launcher {
@@ -45,7 +131,7 @@ public class Constants {
         //60,12
         //default stage 2 velocity target(this is also parameterized)
         public static double defaultVelocity = 80;
-        public static double ampVelocity = 20;
+        public static double ampVelocity = 15;
         public static double defaultSpinVelocity = 0;
 
         public static double stage1Voltage = 10;
@@ -61,10 +147,10 @@ public class Constants {
 
         public static double tiltRotorToMechanismRatio = 50.0 / (2.0*Math.PI);
         //both of these need to be POSITIVE!!
-        public static double tiltMaxOutputUp = 3.2;
+        public static double tiltMaxOutputUp = 3.0;
         public static double tiltMaxOutputDown = 1.2;
         public static double tiltKp = 85; //TODO: estimate for appropriate kP with new sensor ratio
-        public static double tiltKd = 2.0;
+        public static double tiltKd = 1.8;
         public static double tiltKg = 0.313; //TODO: determine appropriate kG for cosine approximation
 
         public static double tiltDefaultPosition = -0.1134464014;
@@ -72,7 +158,7 @@ public class Constants {
         public static double tiltMaxPosition = 1.23; //0.195rot TODO: determine max tilt position in radians
         public static double tiltMinPosition = -0.113446;
 
-        public static double tiltTolerance = 0.0065;
+        public static double tiltTolerance = 0.007;
 
         public static double ampTiltPosition = 0.86;
 
@@ -91,10 +177,10 @@ public class Constants {
         */
         public static HashMap<Double, Double> velocityMap = new HashMap<Double,Double>() { {
             put(1370.0, 60.0);
-            put(1930.0, 70.0);
-            put(2280.0, 70.0);
-            put(2740.0, 80.0);
-            put(3220.0, 90.0);
+            put(1930.0, 75.0);
+            put(2280.0, 80.0);
+            put(2740.0, 82.0);
+            put(3220.0, 95.0);
         }};
 
         //TODO: remap tilt position in radians
@@ -124,7 +210,7 @@ public class Constants {
         public static Pose2d blueAmpPose = new Pose2d(1.84, 8.2, new Rotation2d(-1.57));
         public static double ampSecondWhiskerLength = 0.8;
 
-        public static double ampWhiskerLength = 0.3;
+        public static double ampWhiskerLength = 0.1;
 
 
         public static double trapWhiskerLength = 0.85;
@@ -132,6 +218,11 @@ public class Constants {
         public static boolean dropTiltAfterSpeakerShot = true;
 
         public static double spitVelocity = 15;
+
+        public static double passVelocity = 95;
+        public static double passTilt = 0;
+        public static Pose2d redPassPose = new Pose2d(15.4, 7.0, new Rotation2d());
+        public static Pose2d bluePassPose = new Pose2d(1.6, 7.0, new Rotation2d());
     }
 
     public static class Intake {
@@ -167,9 +258,9 @@ public class Constants {
     }
 
     public static class DriverControls {
-        public static int steeringAxis = 0;
-        public static int forwardAxis = 4;
-        public static int reverseAxis = 3;
+        public static int strafeAxis = 0;
+        public static int forwardAxis = 1;
+        public static int rotationAxis = 2;
 
         public static int intakeButton = 3;
 
@@ -179,6 +270,9 @@ public class Constants {
         public static int autoNoteButton = 10;
         public static int ampShotButton = 5;
         public static int trapShotButton = 9;
+
+        public static int passButton = 1;
+        public static int autoPassButton = 4;
 
         public static int tiltTakeover = 12;
         public static int generalAlignButton = 14;
@@ -192,5 +286,12 @@ public class Constants {
 
         public static int configureSubShotButton = 5;
         public static int configurePodiumShotButton = 6;
+    }
+
+    public static class Watchdog {
+        public static double minBusVoltage = 9.0;
+        public static double minMatchConfigBusVoltage = 12.85;
+
+        //public static RectangularZone 
     }
 }

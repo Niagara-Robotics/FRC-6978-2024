@@ -17,6 +17,8 @@ import java.util.ArrayList;
 
 public class Lift implements IPeriodicTask {
     
+    boolean lastCatchState;
+
     public boolean beyondCatchPoint() {
         //return Hardware.liftMotor.getSelectedSensorPosition() > Constants.Lift.catchPoint;
         return !Hardware.liftSensor.get();
@@ -53,6 +55,11 @@ public class Lift implements IPeriodicTask {
             Hardware.tertiaryLiftMotor.set(ControlMode.Disabled, 0);
             Hardware.quaternaryLiftMotor.set(ControlMode.Disabled, 0);
         }
+
+        if(beyondCatchPoint() && lastCatchState == false) {
+            Subsystems.illumination.setStatic((byte)0, 190, 190, 170);
+            Subsystems.illumination.setStatic((byte)1, 190, 190, 170);
+        }
     }
 
     public void publishTelemetry() {
@@ -60,6 +67,7 @@ public class Lift implements IPeriodicTask {
         Subsystems.telemetry.pushDouble("lift_position", Hardware.liftMotor.getSelectedSensorPosition());
         Subsystems.telemetry.pushDouble("lift_velocity", Hardware.liftMotor.getSelectedSensorVelocity());
         Subsystems.telemetry.pushBoolean("lift_limitSwitch", beyondCatchPoint());
+        
     }
 
     public void onStop() {

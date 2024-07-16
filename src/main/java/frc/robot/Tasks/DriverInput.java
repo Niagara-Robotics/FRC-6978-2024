@@ -2,7 +2,6 @@ package frc.robot.Tasks;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.random.RandomGenerator;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Framework.IPeriodicTask;
@@ -28,7 +27,7 @@ public class DriverInput implements IPeriodicTask {
 
     public DriverInput() {
         tiltHandle = Subsystems.launcher.tilt.getHandle("driver");
-        driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("driverInput");
+        driveHandle = Subsystems.drive.wantedChassisSpeeds.getHandle("driverInput");
     }
 
 
@@ -58,10 +57,44 @@ public class DriverInput implements IPeriodicTask {
         driveHandle.set(speeds);
     }
 
+    void driveStickVelocitySwerve(double x, double y, double w, double xyMultiplier, double wMultiplier) {
+        x = (Math.abs(x) > Constants.Drive.deadZone)? 
+            ((x > 0)? 
+                ((x-Constants.Drive.deadZone)/(1-Constants.Drive.deadZone)) :
+                ((x+Constants.Drive.deadZone)/(1-Constants.Drive.deadZone))
+            ) 
+            : 0;
+
+        y = (Math.abs(y) > Constants.Drive.deadZone)? 
+            ((y > 0)? 
+                ((y-Constants.Drive.deadZone)/(1-Constants.Drive.deadZone)) :
+                ((y+Constants.Drive.deadZone)/(1-Constants.Drive.deadZone))
+            ) 
+            : 0;
+
+        w = (Math.abs(w) > Constants.Drive.deadZone)? 
+            ((w > 0)? 
+                ((w-Constants.Drive.deadZone)/(1-Constants.Drive.deadZone)) :
+                ((w+Constants.Drive.deadZone)/(1-Constants.Drive.deadZone))
+            ) 
+            : 0;
+
+        x *= xyMultiplier;
+        y *= xyMultiplier;
+
+        Subsystems.telemetry.pushDouble("driverInput_driveX", x);
+        Subsystems.telemetry.pushDouble("driverInput_driveY", y);
+        Subsystems.telemetry.pushDouble("driverInput_driveW", w);
+
+        ChassisSpeeds speeds = new ChassisSpeeds(y, x, -w);
+
+        driveHandle.set(speeds);
+    }
+
     public void useMainDriverStick() {
-        double x = Hardware.driverStick.getRawAxis(Constants.DriverControls.steeringAxis);
-        double y = (Hardware.driverStick.getRawAxis(Constants.DriverControls.forwardAxis) + 1 )/2 - 
-            (Hardware.driverStick.getRawAxis(Constants.DriverControls.reverseAxis) + 1 )/2;
+        double x = Hardware.driverStick.getRawAxis(Constants.DriverControls.strafeAxis);
+        double y = Hardware.driverStick.getRawAxis(Constants.DriverControls.forwardAxis);
+        double w = Hardware.driverStick.getRawAxis(Constants.DriverControls.rotationAxis);
         
 
         if(autoAlign) {
@@ -72,10 +105,10 @@ public class DriverInput implements IPeriodicTask {
 
             double output = noteController.process(Subsystems.tracking.noteTargetX);
             if(Subsystems.tracking.noteTargetY > 1) {output = 0.0;};
+            //FIXME:change back to 0.8
+            driveHandle.set(new ChassisSpeeds(0.0,0, output));
 
-            driveHandle.set(new ChassisSpeeds(0.8,0, output));
-
-        } else driveStickVelocity(x, y, 3, 3.65);
+        } else driveStickVelocitySwerve(x, y, w, 0.2, 0.2);
 
         //shoot button
         if(Hardware.driverStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
@@ -113,6 +146,7 @@ public class DriverInput implements IPeriodicTask {
         
         noteController = new PIDController(0.020, 0.0, 0.5);
         if(!tiltHandle.hasControl()) tiltHandle.takeControl(false);
+        driveHandle.takeControl(false);
     }
 
     public void onLoop(RunContext ctx) {
@@ -124,7 +158,12 @@ public class DriverInput implements IPeriodicTask {
             driveHandle.release();
             autoAlign = true;
             Subsystems.autoShot.fullAutoLaunch();
-        } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.autoAlignButton)) {
+        } else if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.autoPassButton)) {
+            driveHandle.release();
+            autoAlign = true;
+            Subsystems.autoShot.autoPass();
+        } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.autoAlignButton) ||
+            Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.autoPassButton)) {
             autoAlign = false;
             driveHandle.takeControl(false);
             driveHandle.set(new ChassisSpeeds(0,0,0));
@@ -151,12 +190,18 @@ public class DriverInput implements IPeriodicTask {
 
         //tiltHandle.takeControl(false);
 
-        if(Hardware.driverStick.getRawButtonPressed(1)) {
+        /*if(Hardware.driverStick.getRawButtonPressed(1)) {
             tiltHandle.takeControl(false);
             tiltHandle.set(-0.1);
         } else if (Hardware.driverStick.getRawButtonPressed(4)) {
             tiltHandle.takeControl(false);
-            tiltHandle.set(0.0);
+            tiltHandle.set(0.5);
+        }*/
+
+        if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.passButton)) {
+            Subsystems.autoShot.passNote();
+        } else if(Hardware.driverStick.getRawButtonReleased(Constants.DriverControls.passButton)) {
+            Subsystems.autoShot.cancelAutoLaunch();
         }
 
         if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.ampShotButton)) {

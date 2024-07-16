@@ -6,17 +6,17 @@
       }
     },
     "Other Devices": {
+      "Talon FX (v6)[1]": {
+        "header": {
+          "open": true
+        }
+      },
       "Talon FX (v6)[1]/Rotor Sensor": {
         "header": {
           "open": true
         }
       },
       "Talon FX (v6)[2]/Rotor Sensor": {
-        "header": {
-          "open": true
-        }
-      },
-      "Talon FX (v6)[30]": {
         "header": {
           "open": true
         }
@@ -44,6 +44,15 @@
   },
   "NetworkTables": {
     "transitory": {
+      "Drive": {
+        "SwerveModuleState##v_/Drive/moduleRequest_0": {
+          "open": true
+        },
+        "SwerveModuleState##v_/Drive/moduleState_0": {
+          "open": true
+        },
+        "open": true
+      },
       "PathPlanner": {
         "HotReload": {
           "open": true

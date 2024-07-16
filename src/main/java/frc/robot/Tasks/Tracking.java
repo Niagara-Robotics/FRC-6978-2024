@@ -43,8 +43,8 @@ public class Tracking implements IPeriodicTask {
 
     PoseStreamerClient client;
 
-    public double shotTargetX;
-    public double shotTargetY;
+    //public double shotTargetX;
+    //public double shotTargetY;
 
     public double noteTargetX;
     public double noteTargetY;
@@ -81,15 +81,16 @@ public class Tracking implements IPeriodicTask {
     LinkedList<OdometrySnapshot> odometrySnapshots;
 
     void initOdometry() {
-        leftPosition = Hardware.leftDriveLeader.getPosition();
-        rightPosition = Hardware.rightDriveLeader.getPosition();
+        leftPosition = new StatusSignal<>(Double.class, null);
+        rightPosition = new StatusSignal<>(Double.class, null);
 
         //change the update frequency depending on the loop time
         leftPosition.setUpdateFrequency(200);
         rightPosition.setUpdateFrequency(200);
 
-        leftVelocity = Hardware.leftDriveLeader.getVelocity();
-        rightVelocity = Hardware.rightDriveLeader.getVelocity();
+        leftVelocity = new StatusSignal<>(Double.class, null);
+        rightVelocity = new StatusSignal<>(Double.class, null);
+        //FIXME: convert tracking odometry to swerve kinematics
 
         leftVelocity.setUpdateFrequency(200);
         rightVelocity.setUpdateFrequency(200);
@@ -223,21 +224,24 @@ public class Tracking implements IPeriodicTask {
             robotY = frame.values.get(1);
             cameraPose = new Pose2d(robotX/1000.0, robotY/1000.0, new Rotation2d(frame.values.get(3) + Math.PI));
             cameraPosePublisher.set(cameraPose);
-            if(frame.values.get(5) > 0 && frame.values.get(4) < 1.25 && (frame.values.get(2) < Constants.Tracking.zClamp) && frame.values.get(7) > Constants.Tracking.minCornerDist) { //require at least 2 tags
+
+            double minCornerDist = (frame.values.get(5) > 1)? Constants.Tracking.minCornerDistMulti : Constants.Tracking.minCornerDistSingle;
+
+            if(frame.values.get(5) > 0 && frame.values.get(4) < 1.25 && (frame.values.get(2) < Constants.Tracking.zClamp) && frame.values.get(7) > minCornerDist) { //require at least 2 tags
                 synchronized(odometry) {
                     fuseCameraPose(cameraPose, frame.timestamp /*- 300000000*/);
                 }
             }
         });
 
-        client.requestPose(2, 0, (frame) -> {
+        /*client.requestPose(2, 0, (frame) -> {
             for(int i=0; i<frame.values.size(); i++) {
                 Subsystems.telemetry.pushDouble("tracking.tag" + frame.id + "Pose" + i, frame.values.get(i));
             }
             Subsystems.telemetry.pushDouble("tracking.tagPoseDeltaT", (System.nanoTime() - frame.timestamp)/1000000.0);
             shotTargetX = frame.values.get(0);
             shotTargetY = frame.values.get(1);
-        });
+        });*/
 
         client.requestPose(3, 1, (frame) -> {
             Subsystems.telemetry.pushDouble("tracking.notePoseX", frame.values.get(0) -320);

@@ -39,7 +39,7 @@ public class AutoPilot implements IPeriodicTask {
     PIDController distanceController;
 
     public AutoPilot() {
-        driveHandle = Subsystems.differentialDrive.wantedChassisSpeeds.getHandle("AutoPilot");
+        driveHandle = Subsystems.drive.wantedChassisSpeeds.getHandle("AutoPilot");
 
         alignmentController = new PIDController(Constants.AutoPilot.anglekP, 0.0, 0.0);
         alignmentController.setLimit(Constants.AutoPilot.angularVelocityLimit);
