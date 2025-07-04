@@ -161,9 +161,9 @@ public class Intake implements IPeriodicTask{
         Subsystems.telemetry.pushBoolean("intake_indexRoller_active", currentState.indexRoller);
         Subsystems.telemetry.pushBoolean("intake_hasNote", currentState.hasNote);
         Subsystems.telemetry.pushBoolean("intake_finished", intakeFinished());
-        Subsystems.telemetry.pushDouble("intake_indexRoller_voltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
-        Subsystems.telemetry.pushDouble("intake_indexRoller_velocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
-        Subsystems.telemetry.pushDouble("intake_floorRoller_voltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
+        //Subsystems.telemetry.pushDouble("intake_indexRoller_voltage", Hardware.intakeIndexerRoller.getMotorVoltage().getValue());
+        //Subsystems.telemetry.pushDouble("intake_indexRoller_velocity", Hardware.intakeIndexerRoller.getVelocity().getValue());
+        //Subsystems.telemetry.pushDouble("intake_floorRoller_voltage", Hardware.intakeFloorRoller.getMotorOutputVoltage());
     }
 
     public void onStop() {

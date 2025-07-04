@@ -13,9 +13,10 @@ import frc.robot.Platform.Tasks;
 
 public class Robot extends TimedRobot{
     Timer loopTimer;
+    boolean skipTelemetry = false;
 
     public Robot() {
-        super(0.007);
+        super(0.0065);
     }
     
     @Override
@@ -45,7 +46,7 @@ public class Robot extends TimedRobot{
         Subsystems.telemetry.openFrame();
         loopTimer.restart();
         super.loopFunc();
-        Subsystems.telemetry.pushDouble("scheduler_looptime", loopTimer.get());
+        Subsystems.telemetry.pushDouble("scheduler_looptime", loopTimer.get() * 1000);
         Subsystems.telemetry.closeFrame();
         
     }
@@ -53,7 +54,8 @@ public class Robot extends TimedRobot{
     @Override
     public void robotPeriodic() {
         DriverStation.refreshData();
-        Schedulers.teleScheduler.run();
+        if(!skipTelemetry) Schedulers.teleScheduler.run();
+        skipTelemetry = !skipTelemetry;
         Schedulers.idleScheduler.run();
     }
 

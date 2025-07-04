@@ -225,6 +225,11 @@ public class PoseStreamerClient extends Thread {
             }
         } catch (UnknownHostException u) {
             System.out.println("PoseStreamer: unknown host");
+            try {
+                sleep(2000);
+            } catch(InterruptedException i) {
+                return false;
+            }
             return false;
         } catch (IOException i) {
             System.out.println(i);

@@ -81,19 +81,20 @@ public class DriverInput implements IPeriodicTask {
 
         x *= xyMultiplier;
         y *= xyMultiplier;
+        w *= wMultiplier;
 
         Subsystems.telemetry.pushDouble("driverInput_driveX", x);
         Subsystems.telemetry.pushDouble("driverInput_driveY", y);
         Subsystems.telemetry.pushDouble("driverInput_driveW", w);
 
-        ChassisSpeeds speeds = new ChassisSpeeds(y, x, -w);
+        ChassisSpeeds speeds = new ChassisSpeeds(y, x, w);
 
         driveHandle.set(speeds);
     }
 
     public void useMainDriverStick() {
-        double x = Hardware.driverStick.getRawAxis(Constants.DriverControls.strafeAxis);
-        double y = Hardware.driverStick.getRawAxis(Constants.DriverControls.forwardAxis);
+        double x = -Hardware.driverStick.getRawAxis(Constants.DriverControls.strafeAxis);
+        double y = -Hardware.driverStick.getRawAxis(Constants.DriverControls.forwardAxis);
         double w = Hardware.driverStick.getRawAxis(Constants.DriverControls.rotationAxis);
         
 
@@ -108,7 +109,7 @@ public class DriverInput implements IPeriodicTask {
             //FIXME:change back to 0.8
             driveHandle.set(new ChassisSpeeds(0.0,0, output));
 
-        } else driveStickVelocitySwerve(x, y, w, 0.2, 0.2);
+        } else driveStickVelocitySwerve(x, y, w, 0.25, 0.5);
 
         //shoot button
         if(Hardware.driverStick.getRawButtonPressed(Constants.OperatorControls.launcherButton)) {
@@ -170,7 +171,7 @@ public class DriverInput implements IPeriodicTask {
             Subsystems.autoShot.cancelAutoLaunch();
         }
 
-        if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.autoNoteButton)) {
+        /*if(Hardware.driverStick.getRawButtonPressed(Constants.DriverControls.autoNoteButton)) {
             noteController.init();
             noteController.set(0.0);
             noteController.setLimit(1.1);
@@ -180,7 +181,7 @@ public class DriverInput implements IPeriodicTask {
             (Subsystems.intake.intakeFinished() &&autoNote)) {
             autoNote = false;
             driveHandle.set(new ChassisSpeeds(0,0,0));
-        }
+        }*/
         
         if(guestActive) {
             //useGuestStick();

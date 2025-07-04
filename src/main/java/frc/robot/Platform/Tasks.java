@@ -28,7 +28,7 @@ public class Tasks {
     public static IPeriodicTask[] autonomousTasks = {
         (IPeriodicTask)Subsystems.drive,
         //(IPeriodicTask)Subsystems.intake,
-        //(IPeriodicTask)Subsystems.auto,
+        (IPeriodicTask)Subsystems.auto,
         //(IPeriodicTask)Subsystems.launcher,
         //(IPeriodicTask)Subsystems.autoShot,
         //(IPeriodicTask)Subsystems.autoPilot,

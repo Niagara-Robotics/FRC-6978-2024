@@ -248,15 +248,15 @@ public class TwoSidedLauncher implements IPeriodicTask {
         Subsystems.telemetry.pushBoolean("launcher_stage2_ready", stage2Ready());
         Subsystems.telemetry.pushBoolean("launcher_stage1_ready", stage1Active);
         Subsystems.telemetry.pushDouble("launcher_tilt_position", tiltPositionSignal.getValue());
-        Subsystems.telemetry.pushDouble("launcher_tilt_velocity", Hardware.launcherTiltMotor.getVelocity().getValue());
-        Subsystems.telemetry.pushDouble("launcher_tilt_voltage", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_tilt_velocity", Hardware.launcherTiltMotor.getVelocity().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_tilt_voltage", Hardware.launcherTiltMotor.getMotorVoltage().getValue());
         Subsystems.telemetry.pushBoolean("launcher_tilt_finished", tiltFinished());
 
-        Subsystems.telemetry.pushDouble("launcher_stage1_leftCurrent", Hardware.leftLauncherStage1.getSupplyCurrent().getValue());
-        Subsystems.telemetry.pushDouble("launcher_stage2_leftCurrent", Hardware.leftLauncherStage2.getSupplyCurrent().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_stage1_leftCurrent", Hardware.leftLauncherStage1.getSupplyCurrent().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_stage2_leftCurrent", Hardware.leftLauncherStage2.getSupplyCurrent().getValue());
 
-        Subsystems.telemetry.pushDouble("launcher_stage1_rightCurrent", Hardware.rightLauncherStage1.getSupplyCurrent().getValue());
-        Subsystems.telemetry.pushDouble("launcher_stage2_rightCurrent", Hardware.rightLauncherStage2.getSupplyCurrent().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_stage1_rightCurrent", Hardware.rightLauncherStage1.getSupplyCurrent().getValue());
+        //Subsystems.telemetry.pushDouble("launcher_stage2_rightCurrent", Hardware.rightLauncherStage2.getSupplyCurrent().getValue());
     }
 
     public void onStop() {

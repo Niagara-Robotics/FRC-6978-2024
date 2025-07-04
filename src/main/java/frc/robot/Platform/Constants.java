@@ -36,49 +36,54 @@ public class Constants {
         public static double yMultiplier = 1.5;
         public static double maxLinearVelocity = 4;
         public static double maxAngularVelocity = 1;
-        public static double deadZone = 0.1;
+        public static double deadZone = 0.16;
     }
 
     public static class SwerveDrive {
         public static Slot0Configs driveGains = new Slot0Configs()
-            .withKP(1.0).withKI(0).withKP(0)
-            .withKS(0).withKV(1.5).withKA(0);
+            .withKP(0.018).withKI(0).withKD(0)
+            .withKS(0.015).withKV(0.12).withKA(0.004);
 
         public static Slot0Configs steerGains = new Slot0Configs()
-            .withKP(1.0).withKI(0).withKP(0)
-            .withKS(0).withKV(0).withKA(0);
+            .withKP(82.0).withKI(0).withKD(0)
+            .withKS(0.12).withKV(0).withKA(0.006);
 
         public static ClosedLoopOutputType steerClosedLoopOutputType = ClosedLoopOutputType.Voltage;
         public static ClosedLoopOutputType driveClosedLoopOutputType = ClosedLoopOutputType.Voltage;
 
         public static double slipCurrent = 60;
 
+        public static VoltageConfigs steerVoltageConfigs = new VoltageConfigs()
+            .withPeakForwardVoltage(12.0)
+            .withPeakReverseVoltage(-12.0);
+
         public static VoltageConfigs driveVoltageConfigs = new VoltageConfigs()
-            .withPeakForwardVoltage(0.3)
-            .withPeakReverseVoltage(0.3);
+            .withPeakForwardVoltage(12.0)
+            .withPeakReverseVoltage(-12.0);
 
         public static TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration()
             .withVoltage(driveVoltageConfigs);
         public static TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                .withStatorCurrentLimit(60)
+                .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true)
             )
-            .withVoltage(driveVoltageConfigs);
+            .withVoltage(steerVoltageConfigs)
+            .withSlot0(steerGains);
         public static CANcoderConfiguration cancoderInitialConfigs = new CANcoderConfiguration();
 
         public static double freeSpeedAt12Volts = 5.39;
 
-        public static double coupleRatio = 2.7; //drive rotor/azimuth rotation
+        public static double coupleRatio = 3.0; //drive rotor/azimuth rotation
 
         public static double driveGearRatio = 5.9;
         public static double steerGearRatio = 18.75;
         public static double wheelRadius = 2; //inches
 
-        public static boolean steeringInvert = false;
-        public static boolean invertLeftSide = false;
-        public static boolean invertRightSide = true;
+        public static boolean steeringInvert = true;
+        public static boolean invertLeftSide = true;
+        public static boolean invertRightSide = false;
 
         public static String CANBusName = "drive";
 
@@ -94,7 +99,7 @@ public class Constants {
         public static int frontRightSteerId = 3;
         public static int frontRightEncoderId = 1;
 
-        public static double frontRightencoderOffset = 0.024;
+        public static double frontRightencoderOffset = 0.3298;
         public static double frontRightPositionX = 0.31;
         public static double frontRightPositionY = -0.31;
 
@@ -102,9 +107,9 @@ public class Constants {
         public static int backLeftSteerId = 5;
         public static int backLeftEncoderId = 2;
 
-        public static double backLeftencoderOffset = -0.053;
+        public static double backLeftencoderOffset = 0.447;
         public static double backLeftPositionX = -0.31;
-        public static double backLeftPositionY = -0.31;
+        public static double backLeftPositionY = 0.31;
 
         public static int backRightDriveId = 6;
         public static int backRightSteerId = 7;
@@ -112,7 +117,7 @@ public class Constants {
 
         public static double backRightencoderOffset = -0.106;
         public static double backRightPositionX = -0.31;
-        public static double backRightPositionY = 0.31;
+        public static double backRightPositionY = -0.31;
 
         
     }

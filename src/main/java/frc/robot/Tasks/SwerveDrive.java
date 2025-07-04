@@ -14,13 +14,17 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.StructArrayPublisher;
 import frc.robot.Framework.IPeriodicTask;
 import frc.robot.Framework.Parameter;
 import frc.robot.Framework.RunContext;
 import frc.robot.Platform.Constants;
+import frc.robot.Platform.Subsystems;
 
 
 public class SwerveDrive implements IPeriodicTask {
@@ -49,7 +53,7 @@ public class SwerveDrive implements IPeriodicTask {
         Constants.SwerveDrive.frontLeftencoderOffset, 
         Constants.SwerveDrive.frontLeftPositionX, 
         Constants.SwerveDrive.frontLeftPositionY, 
-        Constants.SwerveDrive.invertLeftSide), 
+        Constants.SwerveDrive.invertRightSide).withCouplingGearRatio(-3.0), 
         
         constantCreator.createModuleConstants(
         Constants.SwerveDrive.frontRightSteerId, 
@@ -58,7 +62,7 @@ public class SwerveDrive implements IPeriodicTask {
         Constants.SwerveDrive.frontRightencoderOffset, 
         Constants.SwerveDrive.frontRightPositionX, 
         Constants.SwerveDrive.frontRightPositionY, 
-        Constants.SwerveDrive.invertRightSide),
+        Constants.SwerveDrive.invertLeftSide),
     
         constantCreator.createModuleConstants(
         Constants.SwerveDrive.backLeftSteerId, 
@@ -67,7 +71,7 @@ public class SwerveDrive implements IPeriodicTask {
         Constants.SwerveDrive.backLeftencoderOffset, 
         Constants.SwerveDrive.backLeftPositionX, 
         Constants.SwerveDrive.backLeftPositionY, 
-        Constants.SwerveDrive.invertLeftSide),
+        Constants.SwerveDrive.invertRightSide).withCouplingGearRatio(-3.0),
     
         constantCreator.createModuleConstants(
         Constants.SwerveDrive.backRightSteerId, 
@@ -76,15 +80,15 @@ public class SwerveDrive implements IPeriodicTask {
         Constants.SwerveDrive.backRightencoderOffset, 
         Constants.SwerveDrive.backRightPositionX, 
         Constants.SwerveDrive.backRightPositionY, 
-        Constants.SwerveDrive.invertRightSide)
+        Constants.SwerveDrive.invertLeftSide)
     };
 
-    private ArrayList<SwerveModule> modules;
+    public ArrayList<SwerveModule> modules;
 
-    SwerveDriveKinematics kinematics;
+    public SwerveDriveKinematics kinematics;
 
-    List<StructPublisher<SwerveModuleState>> moduleStatePublishers;
-    List<StructPublisher<SwerveModuleState>> moduleRequestPublishers;
+    StructArrayPublisher<SwerveModulePosition> moduleStatePublisher;
+    StructArrayPublisher<SwerveModuleState> moduleRequestPublishers;
 
     Parameter<ChassisSpeeds> wantedChassisSpeeds;
 
@@ -95,24 +99,18 @@ public class SwerveDrive implements IPeriodicTask {
         }
 
         Translation2d m_frontLeftLocation = new Translation2d(constants[0].LocationX, constants[0].LocationY);
-        Translation2d m_frontRightLocation = new Translation2d(constants[0].LocationX, constants[0].LocationY);
-        Translation2d m_backLeftLocation = new Translation2d(constants[0].LocationX, constants[0].LocationY);
-        Translation2d m_backRightLocation = new Translation2d(constants[0].LocationX, constants[0].LocationY);
+        Translation2d m_frontRightLocation = new Translation2d(constants[1].LocationX, constants[1].LocationY);
+        Translation2d m_backLeftLocation = new Translation2d(constants[2].LocationX, constants[2].LocationY);
+        Translation2d m_backRightLocation = new Translation2d(constants[3].LocationX, constants[3].LocationY);
 
         kinematics = new SwerveDriveKinematics(m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
-    
-        moduleStatePublishers = new ArrayList<StructPublisher<SwerveModuleState>>();
-        for(int i=0; i<modules.size(); i++) {
-            moduleStatePublishers.add(NetworkTableInstance.getDefault().getTable("Drive").getStructTopic("moduleState_" + i, SwerveModuleState.struct).publish());
-        }
 
-        moduleRequestPublishers = new ArrayList<StructPublisher<SwerveModuleState>>();
-        for(int i=0; i<modules.size(); i++) {
-            moduleRequestPublishers.add(NetworkTableInstance.getDefault().getTable("Drive").getStructTopic("moduleRequest_" + i, SwerveModuleState.struct).publish());
-        }
+        moduleStatePublisher = NetworkTableInstance.getDefault().getTable("Drive").getStructArrayTopic("moduleStates", SwerveModulePosition.struct).publish();
+
+        moduleRequestPublishers = NetworkTableInstance.getDefault().getTable("Drive").getStructArrayTopic("moduleRequests", SwerveModuleState.struct).publish();
 
         wantedChassisSpeeds = new Parameter<ChassisSpeeds>(new ChassisSpeeds());
-        wantedChassisSpeeds.onValueUpdated = (value) -> driveChassisSpeeds(value);
+        wantedChassisSpeeds.onValueUpdated = (value) -> driveFieldSpeeds(value);
     }
     
     public List<RunContext> getAllowedRunContexts() { 
@@ -125,13 +123,46 @@ public class SwerveDrive implements IPeriodicTask {
     public void onStart(RunContext ctx) {
         
     }
-    //TODO: add a fieldSpeeds class
+
+    public SwerveModulePosition[] getModulePositions() {
+        SwerveModulePosition[] positions = new SwerveModulePosition[modules.size()];
+        for (int i=0; i<modules.size(); i++) {
+            positions[i] = modules.get(i).getPosition(true);
+        }
+        moduleStatePublisher.set(positions);
+        return positions;
+    }
+
+    public ChassisSpeeds getChassisSpeeds() {
+        SwerveModuleState[] states = new SwerveModuleState[modules.size()];
+        for (int i=0; i<modules.size(); i++) {
+            states[i] = modules.get(i).getCurrentState();
+        }
+        ChassisSpeeds rawSpeeds = kinematics.toChassisSpeeds(states);
+        rawSpeeds.omegaRadiansPerSecond = Subsystems.tracking.getGyroRate();
+
+        return rawSpeeds;
+    }
+
     private void driveChassisSpeeds(ChassisSpeeds speeds) {
+        long startTime = System.nanoTime();
         SwerveModuleState moduleStates[] = kinematics.toSwerveModuleStates(speeds);
+        long calcTime = System.nanoTime() - startTime;
         for (int i=0; i<modules.size(); i++) {
             modules.get(i).apply(SwerveModuleState.optimize(moduleStates[i], modules.get(i).getPosition(true).angle), DriveRequestType.Velocity);
-            moduleRequestPublishers.get(i).set(SwerveModuleState.optimize(moduleStates[i], modules.get(i).getPosition(true).angle));
+            //modules.get(i).apply(moduleStates[i], DriveRequestType.Velocity);
+            //moduleRequestPublishers.get(i).set(moduleStates[i);
         }
+        long totalTime = System.nanoTime() - startTime;
+
+        SmartDashboard.putNumber("swerve_controller_calc_time_us", calcTime/1000.0);
+        SmartDashboard.putNumber("swerve_controller_total_time_us", totalTime/1000.0);
+        moduleRequestPublishers.set(moduleStates);
+    }
+
+    private void driveFieldSpeeds(ChassisSpeeds speeds) {
+        ChassisSpeeds.fromFieldRelativeSpeeds(speeds, Subsystems.tracking.getFieldRelativeRotation());
+        driveChassisSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, Subsystems.tracking.getFieldRelativeRotation()));
     }
 
     public void onLoop(RunContext ctx) {
@@ -143,8 +174,6 @@ public class SwerveDrive implements IPeriodicTask {
     }
 
     public void publishTelemetry() {
-        for(int i=0; i<modules.size(); i++) {
-            moduleStatePublishers.get(i).set(modules.get(i).getCurrentState());
-        }
+        
     }
 }

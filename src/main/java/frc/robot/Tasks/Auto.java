@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -39,12 +40,12 @@ public class Auto implements IPeriodicTask {
 
         driveHandle = Subsystems.drive.wantedChassisSpeeds.getHandle("autonomous");
 
-        AutoBuilder.configureRamsete(
+        AutoBuilder.configureHolonomic(
                 () -> Subsystems.tracking.getPose(), // Robot pose supplier
                 pose -> Subsystems.tracking.setOdometryPose(pose), // Method to reset odometry (will be called if your auto has a starting pose)
-                () -> Subsystems.tracking.getChassisSpeeds(), // Current ChassisSpeeds supplier
+                () -> Subsystems.drive.getChassisSpeeds(), // Current ChassisSpeeds supplier
                 speeds -> driveHandle.set(speeds), // Method that will drive the robot given ChassisSpeeds
-                new ReplanningConfig(), // Default path replanning config. See the API for the options here
+                new HolonomicPathFollowerConfig(4.0, 0.438, new ReplanningConfig()), // Default path replanning config. See the API for the options here
                 () -> {
                     // Boolean supplier that controls when the path will be mirrored for the red alliance
                     // This will flip the path being followed to the red side of the field.

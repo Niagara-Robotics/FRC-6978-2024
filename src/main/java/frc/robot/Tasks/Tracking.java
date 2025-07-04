@@ -10,8 +10,9 @@ import com.ctre.phoenix6.StatusSignal;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -29,8 +30,12 @@ public class Tracking implements IPeriodicTask {
         return Hardware.navX.getRotation2d();
     }
 
+    double getGyroRate() {
+        return Math.toRadians(Hardware.navX.getRawGyroZ());
+    }
+
     // --Odometry system(wheel encoder and gyroscope tracking)--
-    DifferentialDriveOdometry odometry;
+    SwerveDriveOdometry odometry;
 
     StatusSignal<Double> leftPosition;
     StatusSignal<Double> rightPosition;
@@ -64,16 +69,14 @@ public class Tracking implements IPeriodicTask {
      * OdometryDelta
      */
     public class OdometrySnapshot {
-        public double leftDistance;
-        public double rightDistance;
+        public SwerveModulePosition[] modulePositions;
         public Rotation2d gyroRotation;
         public long timestamp;
 
-        public OdometrySnapshot(double leftDistance, double rightDistance, Rotation2d rotation) {
+        public OdometrySnapshot(SwerveModulePosition[] modulePositions, Rotation2d rotation) {
             this.timestamp = System.nanoTime();
 
-            this.leftDistance = leftDistance;
-            this.rightDistance = rightDistance;
+            this.modulePositions = modulePositions.clone();
             this.gyroRotation = rotation;
         }
     }
@@ -95,11 +98,10 @@ public class Tracking implements IPeriodicTask {
         leftVelocity.setUpdateFrequency(200);
         rightVelocity.setUpdateFrequency(200);
 
-        odometry = new DifferentialDriveOdometry(
-            Hardware.navX.getRotation2d(),
-            leftPosition.getValue() * Constants.Drive.rotorToMeters,
-            rightPosition.getValue() * Constants.Drive.rotorToMeters,
-            new Pose2d(0, 0, new Rotation2d())
+        odometry = new SwerveDriveOdometry(
+            Subsystems.drive.kinematics,
+            getFieldRelativeRotation(),
+            Subsystems.drive.getModulePositions()
         );
         
         odometrySnapshots = new LinkedList<OdometrySnapshot>();
@@ -108,12 +110,10 @@ public class Tracking implements IPeriodicTask {
     void updateOdometry() {
         odometry.update(
             getFieldRelativeRotation(),
-            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
-            rightPosition.getValue() * Constants.Drive.rotorToMeters
+            Subsystems.drive.getModulePositions()
         );
         odometrySnapshots.add(new OdometrySnapshot(
-            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
-            rightPosition.getValue() * Constants.Drive.rotorToMeters, 
+            Subsystems.drive.getModulePositions(),
             getFieldRelativeRotation()
         ));
         if(odometrySnapshots.size() > 100) {
@@ -126,8 +126,7 @@ public class Tracking implements IPeriodicTask {
         if(tempSnapshots.size() < 1) {
             odometry.resetPosition(
                 Hardware.navX.getRotation2d(), 
-                leftPosition.getValue() * Constants.Drive.rotorToMeters,
-                rightPosition.getValue() * Constants.Drive.rotorToMeters,
+                Subsystems.drive.getModulePositions(),
                 cameraPose);
             lastCameraCorrection = System.nanoTime();
             return;
@@ -144,8 +143,7 @@ public class Tracking implements IPeriodicTask {
         if(closestSnapshot.timestamp < frame_timestamp) {
             odometry.resetPosition(
                 Hardware.navX.getRotation2d(), 
-                leftPosition.getValue() * Constants.Drive.rotorToMeters,
-                rightPosition.getValue() * Constants.Drive.rotorToMeters,
+                Subsystems.drive.getModulePositions(),
                 cameraPose);
             lastCameraCorrection = System.nanoTime();
             Subsystems.telemetry.pushBoolean("tracking_resetFusion", true);
@@ -154,16 +152,14 @@ public class Tracking implements IPeriodicTask {
 
         odometry.resetPosition(
                 closestSnapshot.gyroRotation, 
-                closestSnapshot.leftDistance,
-                closestSnapshot.rightDistance,
+                closestSnapshot.modulePositions,
                 cameraPose);
         int numFusedSnapshots = 0;
         while(tempSnapshots.size() > 0) {
             OdometrySnapshot snapshot = tempSnapshots.pop();
             odometry.update(
                 snapshot.gyroRotation,
-                snapshot.leftDistance, 
-                snapshot.rightDistance
+                snapshot.modulePositions
             );
             numFusedSnapshots++;
         }
@@ -178,8 +174,7 @@ public class Tracking implements IPeriodicTask {
 
     public void setOdometryPose(Pose2d pose) {
         odometry.resetPosition(getFieldRelativeRotation(), 
-            leftPosition.getValue() * Constants.Drive.rotorToMeters, 
-            rightPosition.getValue() * Constants.Drive.rotorToMeters,
+            Subsystems.drive.getModulePositions(),
             pose
         );
     }
@@ -190,7 +185,7 @@ public class Tracking implements IPeriodicTask {
             rightVelocity.getValue() * Constants.Drive.rotorToMeters
         );
 
-        return Hardware.kinematics.toChassisSpeeds(wheelSpeeds);
+        return Subsystems.drive.kinematics.toChassisSpeeds();
     }
 
     //general getters
@@ -266,7 +261,7 @@ public class Tracking implements IPeriodicTask {
         Subsystems.telemetry.pushDouble("tracking_leftVelocity", leftVelocity.getValue());
         Subsystems.telemetry.pushDouble("tracking_rightVelocity", rightVelocity.getValue());
         Subsystems.telemetry.pushDouble("tracking_theta", getFieldRelativeRotation().getDegrees());
-        Subsystems.telemetry.pushDouble("tracking_omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRate()));
+        Subsystems.telemetry.pushDouble("tracking_omegaRadiansPerSecondGyro", Math.toRadians(Hardware.navX.getRawGyroZ()));
         Subsystems.telemetry.pushBoolean("tracking_poseGood", poseGood());
     }
 

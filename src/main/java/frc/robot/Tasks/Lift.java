@@ -64,8 +64,8 @@ public class Lift implements IPeriodicTask {
 
     public void publishTelemetry() {
         // TODO Auto-generated method stub
-        Subsystems.telemetry.pushDouble("lift_position", Hardware.liftMotor.getSelectedSensorPosition());
-        Subsystems.telemetry.pushDouble("lift_velocity", Hardware.liftMotor.getSelectedSensorVelocity());
+        //Subsystems.telemetry.pushDouble("lift_position", Hardware.liftMotor.getSelectedSensorPosition());
+        //Subsystems.telemetry.pushDouble("lift_velocity", Hardware.liftMotor.getSelectedSensorVelocity());
         Subsystems.telemetry.pushBoolean("lift_limitSwitch", beyondCatchPoint());
         
     }
